@@ -56,6 +56,9 @@ export type WeddingSummary = {
   wordpressPostRecordId: string | null;
   wordpressDraftUrl: string | null;
   isPublished: boolean;
+  postUrl: string | null;
+  vendorCount: number;
+  vendorsSentCount: number;
   inquiryCount: number;
 };
 

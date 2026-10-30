@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-type Props = { draftId: string; integrationsEnabled: boolean };
+type Props = { draftId: string; integrationsEnabled: boolean; onDelivered?: (draftUrl: string) => void };
 type ConnectionResult = { connected: boolean; siteUrl: string | null };
 type DeliveryResult = { draftUrl: string; status: "draft" };
 
@@ -23,7 +23,7 @@ async function requestJson<T>(url: string, method: "GET" | "POST", body?: unknow
   return result as T;
 }
 
-export function WordPressControls({ draftId, integrationsEnabled }: Props) {
+export function WordPressControls({ draftId, integrationsEnabled, onDelivered }: Props) {
   const [siteUrl, setSiteUrl] = useState("");
   const [username, setUsername] = useState("");
   const [applicationPassword, setApplicationPassword] = useState("");
@@ -78,6 +78,7 @@ export function WordPressControls({ draftId, integrationsEnabled }: Props) {
     try {
       const result = await requestJson<DeliveryResult>("/api/wordpress/posts", "POST", { draftId });
       setDraftUrl(result.draftUrl);
+      onDelivered?.(result.draftUrl);
       setNotice("Sent to WordPress as a draft. It is not live until you publish it there.");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The WordPress draft could not be sent.");

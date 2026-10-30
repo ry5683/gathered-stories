@@ -39,6 +39,9 @@ export function WeddingList({ weddings, weeklyInquiries, integrationsEnabled, on
                 <h3>{item.wedding.venue}</h3>
                 <p>{item.wedding.city}{item.wedding.weddingDate ? ` · ${item.wedding.weddingDate}` : ""}</p>
                 <span className={`status-pill status-${item.status.toLowerCase()}`}>{item.status}</span>
+                {item.vendorCount > 0 && item.status !== "Draft" && (
+                  <span className={`status-pill vendor-sent-pill ${item.vendorsSentCount === item.vendorCount ? "status-approved" : ""}`}>Vendors sent {item.vendorsSentCount} of {item.vendorCount}</span>
+                )}
                 {item.wordpressDraftUrl && (
                   <p className="muted-copy">
                     {item.isPublished ? "Marked as published in WordPress." : "Sent to WordPress as a draft. Publish it there before marking it live."}

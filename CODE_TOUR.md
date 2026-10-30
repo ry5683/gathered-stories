@@ -11,7 +11,10 @@ This guide follows the app as it exists in the repository. The new-wedding form 
 - `components/PhotoPicker.tsx` — 10–20 short image descriptions; it never receives image files.
 - `components/DraftReview.tsx` — autosaved editable content, voice switch, rewrite, similarity warning, and confirmed approval.
 - `components/ShowItPack.tsx` — maps the approved draft to ShowIt fields, Copy all, individual copy buttons, and the optional WordPress draft controls.
-- `components/WeddingList.tsx` — resumable wedding summaries and manual post/inquiry status actions.
+- `components/WeddingList.tsx` — resumable wedding summaries, the "Vendors sent X of Y" pill, and manual post/inquiry status actions.
+- `components/VendorPicker.tsx` — the Wedding step's vendor list: add saved or new vendors, order, and Instagram collaborators (max 5). Also opens from the draft review and share kit.
+- `components/VendorLibrary.tsx` — edit and delete saved vendors, and the photographer's own credit line. `components/VendorFields.tsx` is the shared add/edit form.
+- `components/VendorShareKit.tsx` — per-vendor messages, post link, email/Instagram buttons, and sent tracking at the bottom of the ShowIt pack.
 - `components/AuthPanel.tsx` — passwordless email sign-in and sign-out.
 - `components/ThemeToggle.tsx` — local theme choice plus optional signed-in preference sync.
 - `app/api/weddings/route.ts` — auth check and allowlisted wedding-field persistence.
@@ -20,13 +23,16 @@ This guide follows the app as it exists in the repository. The new-wedding form 
 - `app/api/drafts/[id]/approve/route.ts` — changes only the draft status; it does not publish.
 - `app/api/wordpress/` — verifies an authenticated connection, sends approved content as an unpublished WordPress draft, and stores manual publish/inquiry status.
 - `app/api/preferences/theme/route.ts` — reads and writes a signed-in user's theme preference.
+- `lib/credits.ts` — every credit format (blog block, caption lines, credited caption), collaborator suggestions, the role words sent to the AI, and the vendor share message. Pure functions, covered by `tests/credits.test.ts`.
+- `lib/vendors-server.ts` — vendor input validation and the `loadWeddingVendors` query shared by the API routes.
+- `app/api/vendors/` and `app/api/weddings/[id]/vendors/` — the saved-vendor library, each wedding's ordered vendor set, and sent tracking. `app/api/weddings/[id]/post-url/` and `app/api/preferences/profile/` save the live post link and the photographer's credit line.
 - `lib/claude.ts` — the server-only prompt builder, Anthropic SDK call, and output validation.
 - `lib/showit.ts` — extracts headings and creates the copy-ready pack.
 - `lib/draft-validation.ts` — distinguishes autosavable content from content complete enough to approve.
 - `lib/wordpress.ts` — encrypts WordPress credentials and validates/pins public HTTPS destinations before making non-redirecting requests.
 - `lib/supabase-browser.ts` and `lib/supabase-server.ts` — public browser client and cookie-backed server client.
 - `lib/types.ts` — the shared data shapes; `lib/theme.ts` — the theme value names; `lib/motion.ts` — typed CSS animation indices.
-- `supabase/schema.sql` and `supabase/migrations/20261030_v2_foundation.sql` — resumable state, integration tables, grants, and row-level security policies.
+- `supabase/schema.sql` and `supabase/migrations/20261030_v2_foundation.sql` — resumable state, integration tables, grants, and row-level security policies. `supabase/migrations/20261031_vendors.sql` adds `vendors`, `wedding_vendors`, the post link and credit-line columns, with RLS checked by `supabase/tests/vendors_rls_test.sql`.
 
 ## One draft from click to copy
 
@@ -42,7 +48,8 @@ Step 2: click "Write draft"
   → route saves content with status "draft" in Supabase
   → Step 3 renders editable fields; autosave and rewrite remain draft-only
   → Approve calls /api/drafts/[id]/approve and changes the status to "approved"
-  → Step 4 uses lib/showit.ts to format all copy-ready fields for ShowIt
+  → Step 4 uses lib/showit.ts to format all copy-ready fields for ShowIt,
+    including code-built vendor credits from lib/credits.ts
   → optional WordPress delivery creates status=draft only; it never publishes
 ```
 

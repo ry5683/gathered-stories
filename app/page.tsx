@@ -11,6 +11,7 @@ import { ShowItPack } from "@/components/ShowItPack";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { VendorLibrary } from "@/components/VendorLibrary";
 import { VendorPicker } from "@/components/VendorPicker";
+import { VendorShareKit, type PostLinkInfo } from "@/components/VendorShareKit";
 import type { VendorDraft } from "@/components/VendorFields";
 import { WeddingForm } from "@/components/WeddingForm";
 import { WeddingList } from "@/components/WeddingList";
@@ -84,6 +85,7 @@ export default function HomePage() {
   const [vendorSaveStatus, setVendorSaveStatus] = useState("");
   const [showVendorLibrary, setShowVendorLibrary] = useState(false);
   const [reviewVendorsOpen, setReviewVendorsOpen] = useState(false);
+  const [postLink, setPostLink] = useState<PostLinkInfo>({ wordpressUrl: null, isPublished: false, postUrl: null });
   const [profile, setProfile] = useState({ photographerName: "", photographerInstagram: "" });
   const vendorSaveQueueRef = useRef<Promise<void>>(Promise.resolve());
   const vendorSaveVersionRef = useRef(0);
@@ -502,6 +504,8 @@ export default function HomePage() {
     setAutoSaveStatus("");
     setShowWeddingList(false);
     setShowVendorLibrary(false);
+    setReviewVendorsOpen(false);
+    setPostLink({ wordpressUrl: null, isPublished: false, postUrl: null });
     void loadWeddingVendors(undefined);
   }
 
@@ -523,6 +527,8 @@ export default function HomePage() {
     setNotice("");
     setShowWeddingList(false);
     setShowVendorLibrary(false);
+    setReviewVendorsOpen(false);
+    setPostLink({ wordpressUrl: item.wordpressDraftUrl, isPublished: item.isPublished, postUrl: item.postUrl });
     void loadWeddingVendors(item.wedding.id);
   }
 
@@ -590,6 +596,23 @@ export default function HomePage() {
       currentTheme: document.documentElement.dataset.theme === "dark" ? "dark" : "light",
     }, "PUT");
     setProfile({ photographerName: result.photographerName ?? "", photographerInstagram: result.photographerInstagram ?? "" });
+  }
+
+  async function savePostUrl(url: string) {
+    const weddingId = weddingIdRef.current ?? await saveWeddingSnapshot();
+    const result = await requestJson<{ postUrl: string | null }>(`/api/weddings/${weddingId}/post-url`, { postUrl: url || null }, "PUT");
+    setPostLink((current) => ({ ...current, postUrl: result.postUrl }));
+    setWeddingList((current) => current.map((item) => (item.wedding.id === weddingId ? { ...item, postUrl: result.postUrl } : item)));
+  }
+
+  async function markVendorSent(vendorId: string, sent: boolean) {
+    const weddingId = weddingIdRef.current;
+    if (!weddingId) return;
+    const result = await requestJson<{ sharedAt: string | null }>(`/api/weddings/${weddingId}/vendors/${vendorId}/shared`, sent ? {} : undefined, sent ? "POST" : "DELETE");
+    setWeddingVendors((current) => current.map((item) => (item.vendor.id === vendorId ? { ...item, sharedAt: result.sharedAt } : item)));
+    setWeddingList((current) => current.map((item) => (item.wedding.id === weddingId
+      ? { ...item, vendorsSentCount: Math.max(0, item.vendorsSentCount + (sent ? 1 : -1)) }
+      : item)));
   }
 
   function openVendorLibrary() {
@@ -773,7 +796,20 @@ export default function HomePage() {
 
         {step === 3 && draft?.status === "approved" && (
           <>
-            <ShowItPack draft={asContent(draft)} photos={photos} draftId={draft.id} integrationsEnabled={integrationsEnabled} vendors={weddingVendors} />
+            <ShowItPack draft={asContent(draft)} photos={photos} draftId={draft.id} integrationsEnabled={integrationsEnabled} vendors={weddingVendors} onWordPressDelivered={(draftUrl) => setPostLink((current) => ({ ...current, wordpressUrl: draftUrl, isPublished: false }))}>
+              <VendorShareKit
+                vendors={weddingVendors}
+                venue={wedding.venue}
+                weddingDate={wedding.weddingDate}
+                link={postLink}
+                profile={profile}
+                onSavePostUrl={savePostUrl}
+                onMarkSent={markVendorSent}
+                onEditProfile={openVendorLibrary}
+                onEditVendors={() => setReviewVendorsOpen((open) => !open)}
+              />
+              {reviewVendorsOpen && <div className="share-kit-picker">{vendorPicker}</div>}
+            </ShowItPack>
             <div className="step-actions">
               <button className="button button-secondary" type="button" onClick={() => goToStep(2)}><span className="btn-arrow" aria-hidden="true">←</span> Back to approved draft</button>
               <span className="microcopy">Copy and paste each field into ShowIt when ready.</span>

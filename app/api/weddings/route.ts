@@ -39,7 +39,7 @@ export async function GET() {
 
     const { data: weddingRows, error: weddingError } = await supabase
       .from("weddings")
-      .select("id,venue,city,wedding_date,ceremony_time,reception_time,dress_code,palette,edit_style,music_loved,music_rejected,photos,favorite_moment,optional_inspiration,current_step,voice,use_voice_examples,updated_at")
+      .select("id,venue,city,wedding_date,ceremony_time,reception_time,dress_code,palette,edit_style,music_loved,music_rejected,photos,favorite_moment,optional_inspiration,current_step,voice,use_voice_examples,post_url,updated_at")
       .order("updated_at", { ascending: false });
     if (weddingError) {
       console.error("Wedding list failed:", weddingError.code ?? "database_error");
@@ -74,7 +74,11 @@ export async function GET() {
       inquiryRows = inquiriesResult.data ?? [];
     }
 
+    // Share-kit progress per wedding: how many credited vendors have been sent their message.
+    // Optional: if the vendor tables aren't migrated yet, the list still loads without counts.
+    const { data: vendorLinks } = await supabase.from("wedding_vendors").select("wedding_id,shared_at");
     const weddings = (weddingRows ?? []).map((row) => {
+      const links = (vendorLinks ?? []).filter((link) => link.wedding_id === row.id);
       const photos = Array.isArray(row.photos) ? row.photos.filter((photo): photo is { id: string; description: string } =>
         Boolean(photo && typeof photo === "object" && "id" in photo && typeof photo.id === "string" && "description" in photo && typeof photo.description === "string"),
       ) : [];
@@ -111,6 +115,9 @@ export async function GET() {
         wordpressPostRecordId: latestPost?.id ?? null,
         wordpressDraftUrl: latestPost?.draft_url ?? null,
         isPublished: Boolean(latestPost?.published_at),
+        postUrl: row.post_url ?? null,
+        vendorCount: links.length,
+        vendorsSentCount: links.filter((link) => link.shared_at).length,
         inquiryCount: postRows
           .filter((candidate) => candidate.wedding_id === row.id)
           .reduce((count, candidate) => count + inquiryRows.filter((inquiry) => inquiry.wordpress_post_id === candidate.id).length, 0),

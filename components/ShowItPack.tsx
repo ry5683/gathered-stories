@@ -8,9 +8,9 @@ import { cssVar } from "@/lib/motion";
 import type { DraftContent, PhotoDescription, WeddingVendor } from "@/lib/types";
 import { WordPressControls } from "@/components/WordPressControls";
 
-type Props = { draft: DraftContent; photos: PhotoDescription[]; draftId: string; integrationsEnabled: boolean; vendors: WeddingVendor[]; children?: React.ReactNode };
+type Props = { draft: DraftContent; photos: PhotoDescription[]; draftId: string; integrationsEnabled: boolean; vendors: WeddingVendor[]; children?: React.ReactNode; onWordPressDelivered?: (draftUrl: string) => void };
 
-export function ShowItPack({ draft, photos, draftId, integrationsEnabled, vendors, children }: Props) {
+export function ShowItPack({ draft, photos, draftId, integrationsEnabled, vendors, children, onWordPressDelivered }: Props) {
   const [copied, setCopied] = useState("");
   const [copyError, setCopyError] = useState("");
   const [copiedAll, setCopiedAll] = useState(false);
@@ -107,7 +107,7 @@ export function ShowItPack({ draft, photos, draftId, integrationsEnabled, vendor
           {pack.extraFormats.emailSneakPeek && <PackField index={1} label="Email sneak-peek" value={pack.extraFormats.emailSneakPeek} button={copyButton("email-sneak-peek", pack.extraFormats.emailSneakPeek)} />}
         </details>
       </div>
-      <WordPressControls draftId={draftId} integrationsEnabled={integrationsEnabled} />
+      <WordPressControls draftId={draftId} integrationsEnabled={integrationsEnabled} onDelivered={onWordPressDelivered} />
       {children}
     </section>
   );

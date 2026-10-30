@@ -7,7 +7,7 @@ A four-step, draft-only workspace for turning wedding details and photo notes in
 1. Install Node.js 20 or newer.
 2. Install dependencies with `npm install`.
 3. Copy `.env.example` to `.env.local` on your own machine and fill in the values there. Never paste secrets into chat or put them in committed files.
-4. Create a Supabase project. For a new project, run [`supabase/schema.sql`](./supabase/schema.sql). For an existing installation, apply the additive migration [`supabase/migrations/20261030_v2_foundation.sql`](./supabase/migrations/20261030_v2_foundation.sql) after your current schema.
+4. Create a Supabase project. For a new project, run [`supabase/schema.sql`](./supabase/schema.sql). For an existing installation, apply the additive migration [`supabase/migrations/20261030_v2_foundation.sql`](./supabase/migrations/20261030_v2_foundation.sql) after your current schema, then [`supabase/migrations/20261031_vendors.sql`](./supabase/migrations/20261031_vendors.sql) for vendor credits. To check the vendor policies, run [`supabase/tests/vendors_rls_test.sql`](./supabase/tests/vendors_rls_test.sql) in the SQL editor; it rolls back everything it creates.
 5. In Supabase Auth, enable email sign-in and set the local callback URL (for example `http://localhost:3000`) in the allowed redirect URLs.
 6. Put the Supabase project URL and anon key in `.env.local`. Add an Anthropic API key there for actual server-side draft generation. To enable WordPress draft delivery, add the Supabase service-role key and a 32-byte encryption key encoded as base64 (generate one locally with `openssl rand -base64 32`).
 7. Start the app with `npm run dev`, then open `http://localhost:3000`.
@@ -18,9 +18,17 @@ AI and integration credentials are read only by server-side code and are never e
 
 The Wedding step starts blank. Sign in with the email link to autosave and resume weddings. Add descriptions for 10–20 photos and a favorite moment, then click **Write draft**. Claude returns validated JSON, which is saved as a draft. Edit or regenerate it before confirming the approval checkbox and choosing **Approve draft**. Approval only marks the draft; the final step provides a **Copy all** option and individual fields for manual ShowIt entry.
 
-The Claude request includes only venue, city, date, style, palette, music preferences, photo descriptions, the photographer's favorite moment, and optional inspiration. Times and dress code remain available in the form but are not sent to the model. Email addresses and phone numbers in free-text are rejected before the AI call; do not include names or other personal details in free-text fields. If enabled, prior approved work is reduced locally to aggregate style cues; the original draft text is never sent as an example.
+The Claude request includes only venue, city, date, style, palette, music preferences, the roles of credited vendors (never their names), photo descriptions, the photographer's favorite moment, and optional inspiration. Times and dress code remain available in the form but are not sent to the model. Email addresses and phone numbers in free-text are rejected before the AI call; do not include names or other personal details in free-text fields. If enabled, prior approved work is reduced locally to aggregate style cues; the original draft text is never sent as an example.
 
 HoneyBook has no public API. The paste/import control reads only recognized JSON or labeled fields in the browser, discards unrecognized fields, then clears the pasted input. It is not a HoneyBook sync. Optional WordPress delivery verifies a public HTTPS site, uses encrypted application-password storage, and always creates a WordPress draft; it never publishes automatically. The app does not fetch WordPress posts or leads. Marking a post live and recording an inquiry are manual summary actions. Zapier event triggers and Aisle Planner imports are future/limited entry paths, not full integrations. Stripe is not wired up; there are no live payments.
+
+## Vendor credits and the share kit
+
+On the Wedding step, add the vendors who worked the day. Vendors are saved once and reused, so the florist you add today shows up in the picker for the next wedding. Mark up to five as Instagram collaborators, or choose **Suggest collaborators**. Manage every saved vendor, and your own credit line (name and Instagram handle), from **Vendors** on the wedding list.
+
+Credits are built by code from the saved vendors, never by the AI. The model only learns which roles worked the wedding ("the florist") and is told never to name them. The draft review shows the credits block under the body; the ShowIt pack adds **Vendor credits**, **Caption with credits**, and the collaborator list (all included in **Copy all**); WordPress delivery appends the credits to the post body.
+
+The ShowIt pack ends with a share kit: one ready message per vendor with **Copy message**, **Copy credit line**, **Open in email** (opens your own mail app with no recipient filled in), **Open Instagram**, and a **Sent** checkbox. The post link comes from a live link you paste, otherwise the WordPress post (with a warning while it is still a draft). The wedding list shows "Vendors sent X of Y". Nothing is sent from the app.
 
 ## Environment variables
 
@@ -38,6 +46,7 @@ For Vercel, add the same variables under **Project Settings → Environment Vari
 
 - `npm run dev` — local development server
 - `npm run typecheck` — TypeScript validation
+- `npm test` — unit tests for credits, captions, and share messages
 - `npm run build` — production build
 
 For a map of the code and data flow, see [`CODE_TOUR.md`](./CODE_TOUR.md). For symptom-based troubleshooting, see [`DEBUGGING_GUIDE.md`](./DEBUGGING_GUIDE.md).

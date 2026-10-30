@@ -148,6 +148,16 @@ export function vendorRolesForPrompt(list: WeddingVendor[]): string[] {
   return [...new Set(roles)].map((role) => ROLE_PROSE[role]);
 }
 
+// "2026-09-12" reads as "September 12, 2026"; anything else is used as typed.
+export function formatWeddingDate(value: string): string {
+  const trimmed = value.trim();
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+  if (!match) return trimmed;
+  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+  if (Number.isNaN(date.getTime())) return trimmed;
+  return date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
+}
+
 export type ShareMessage = { subject: string; body: string; creditLine: string };
 
 // One vendor's "you're featured" message. No AI call: a fixed template filled with saved facts.
@@ -165,7 +175,8 @@ export function buildShareMessage(input: {
     photographer ? `Photos by ${photographer}` : "Photos",
     input.photographerInstagram ? `@${input.photographerInstagram}` : "",
   ].filter(Boolean).join(" ");
-  const weddingWords = [input.venue.trim(), "wedding", input.weddingDate.trim() ? `on ${input.weddingDate.trim()}` : ""]
+  const date = formatWeddingDate(input.weddingDate);
+  const weddingWords = [input.venue.trim(), "wedding", date ? `on ${date}` : ""]
     .filter(Boolean).join(" ");
   const subject = `You're featured: ${input.venue.trim()} wedding`;
   const body = [
@@ -174,8 +185,9 @@ export function buildShareMessage(input: {
     `The ${weddingWords} is on the blog, and you're credited as ${roleLabel(vendor).toLowerCase()}.`,
     input.postUrl ? input.postUrl : "(Add the post link before sending.)",
     "",
-    "Feel free to share it. If you post any of the photos, here's the credit line:",
-    creditLine,
+    ...(photographer || input.photographerInstagram
+      ? ["Feel free to share it. If you post any of the photos, here's the credit line:", creditLine]
+      : ["Feel free to share it!"]),
     "",
     "Thank you for being part of the day!",
     ...(photographer ? [photographer] : []),

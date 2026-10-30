@@ -156,3 +156,17 @@ describe("ShowIt pack credits", async () => {
     assert.deepEqual(empty.collaborators, []);
   });
 });
+
+describe("share message wording", () => {
+  it("formats ISO dates and drops the credit-line ask when the photographer has no credit details", () => {
+    const { vendor } = link("florist", "Bloom");
+    const plain = buildShareMessage({ vendor, venue: "The Orchard", weddingDate: "2026-09-12", postUrl: "https://blog.example.com/p", photographerName: null, photographerInstagram: null });
+    assert.match(plain.body, /The Orchard wedding on September 12, 2026 is on the blog/);
+    assert.match(plain.body, /Feel free to share it!/);
+    assert.doesNotMatch(plain.body, /credit line/);
+    const credited = buildShareMessage({ vendor, venue: "The Orchard", weddingDate: "Sept 2026", postUrl: null, photographerName: "Ryan", photographerInstagram: "ryanphoto" });
+    assert.match(credited.body, /on Sept 2026 is/);
+    assert.match(credited.body, /Photos by Ryan @ryanphoto/);
+    assert.match(credited.body, /Add the post link before sending/);
+  });
+});
