@@ -105,7 +105,11 @@ a { color: var(--text); }
 .app-shell { width: min(1120px, calc(100% - 48px)); margin: 0 auto; }
 .topbar { display: flex; align-items: center; justify-content: space-between; min-height: 78px; border-bottom: 1px solid var(--border); gap: 20px; animation: fade-up 600ms cubic-bezier(.22, 1, .36, 1) backwards; }
 .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); font-family: var(--font-serif); font-size: 18px; letter-spacing: .01em; white-space: nowrap; }
-.brand-mark { display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid var(--accent); border-radius: 50%; background: var(--surface-raised); color: var(--text); font-family: var(--font-serif); font-size: 17px; transition: transform 420ms cubic-bezier(.22, 1, .36, 1); }
+.brand-mark { display: grid; width: 34px; height: 34px; flex: 0 0 auto; overflow: hidden; place-items: center; border: 1px solid var(--accent); border-radius: 50%; background: var(--surface-raised); transition: transform 420ms cubic-bezier(.22, 1, .36, 1); }
+.brand-mark img, .flourish-mark img { width: 100%; height: 100%; object-fit: cover; }
+.brand-icon-dark { display: none; }
+:root[data-theme="dark"] .brand-icon-light { display: none; }
+:root[data-theme="dark"] .brand-icon-dark { display: block; }
 .brand:hover .brand-mark { transform: rotate(-8deg) scale(1.05); }
 .header-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
 .auth-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -124,7 +128,7 @@ h1 em { color: var(--accent); font-style: italic; }
 .flourish { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 22px auto 0; color: var(--accent); }
 .flourish::before, .flourish::after { width: 54px; height: 1px; background: linear-gradient(90deg, transparent, var(--accent)); content: ""; }
 .flourish::after { transform: scaleX(-1); }
-.flourish-mark { display: grid; width: 28px; height: 28px; place-items: center; border: 1px solid var(--accent); border-radius: 50%; background: var(--surface-raised); color: var(--text); font-family: var(--font-serif); font-size: 14px; }
+.flourish-mark { display: grid; width: 28px; height: 28px; overflow: hidden; place-items: center; border: 1px solid var(--accent); border-radius: 50%; background: var(--surface-raised); }
 
 .step-nav { --nav-pad: 7px; position: sticky; z-index: 30; top: 12px; isolation: isolate; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); width: min(100%, 880px); margin: 0 auto 24px; padding: var(--nav-pad); border: 1px solid var(--glass-border); border-radius: 999px; background: var(--glass-surface); box-shadow: inset 0 1px 0 var(--glass-highlight), var(--shadow-float); animation: fade-down 550ms 130ms cubic-bezier(.22, 1, .36, 1) backwards; }
 .step-nav::before { position: absolute; z-index: 0; top: var(--nav-pad); bottom: var(--nav-pad); left: var(--nav-pad); width: calc((100% - 2 * var(--nav-pad)) / 4); border-radius: 999px; background: linear-gradient(145deg, var(--surface-raised), var(--glass-raised)); box-shadow: inset 0 1px 0 var(--glass-highlight), 0 2px 7px rgba(37, 67, 43, .09); content: ""; transform: translateX(calc(var(--step-index, 0) * 100%)); transition: transform 600ms cubic-bezier(.22, 1, .36, 1); }

@@ -3,11 +3,12 @@
 // the app renders; the system preference is used only when no choice exists yet.
 import type { Metadata } from "next";
 import "./globals.css";
-import { THEME_STORAGE_KEY } from "@/lib/theme";
+import { THEME_ICON_PATHS, THEME_STORAGE_KEY } from "@/lib/theme";
 
 export const metadata: Metadata = {
   title: "Gathered Stories — Wedding story studio",
   description: "Turn wedding details and photo notes into a thoughtful, editable venue story.",
+  icons: { icon: THEME_ICON_PATHS.light },
 };
 
 const themeScript = `
@@ -22,6 +23,11 @@ const themeScript = `
     ? saved
     : (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
   document.documentElement.dataset.theme = theme;
+  document.querySelectorAll('link[rel~="icon"]').forEach((icon) => {
+    icon.href = theme === "dark"
+      ? "${THEME_ICON_PATHS.dark}"
+      : "${THEME_ICON_PATHS.light}";
+  });
 })();
 `;
 

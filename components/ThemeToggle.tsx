@@ -3,7 +3,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { THEME_STORAGE_KEY, THEME_TRANSITION_CLASS, THEME_TRANSITION_MS, type Theme } from "@/lib/theme";
+import { syncThemeIcon, THEME_STORAGE_KEY, THEME_TRANSITION_CLASS, THEME_TRANSITION_MS, type Theme } from "@/lib/theme";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export function ThemeToggle() {
@@ -19,7 +19,9 @@ export function ThemeToggle() {
 
   useEffect(() => {
     let active = true;
-    setTheme(document.documentElement.dataset.theme === "dark" ? "dark" : "light");
+    const currentTheme = document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+    setTheme(currentTheme);
+    syncThemeIcon(currentTheme);
     const supabase = createSupabaseBrowserClient();
     if (!supabase) return () => { active = false; };
     supabase.auth.getUser().then(async ({ data, error }) => {
@@ -31,6 +33,7 @@ export function ThemeToggle() {
         if (active && !userChangedTheme.current && (result.theme === "light" || result.theme === "dark")) {
           document.documentElement.dataset.theme = result.theme;
           window.localStorage.setItem(THEME_STORAGE_KEY, result.theme);
+          syncThemeIcon(result.theme);
           setTheme(result.theme);
         }
       } catch {
@@ -47,6 +50,7 @@ export function ThemeToggle() {
     if (transitionTimer.current !== null) window.clearTimeout(transitionTimer.current);
     document.documentElement.classList.add(THEME_TRANSITION_CLASS);
     document.documentElement.dataset.theme = next;
+    syncThemeIcon(next);
     transitionTimer.current = window.setTimeout(() => {
       document.documentElement.classList.remove(THEME_TRANSITION_CLASS);
       transitionTimer.current = null;

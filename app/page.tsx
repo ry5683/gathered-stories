@@ -3,6 +3,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { AuthPanel } from "@/components/AuthPanel";
 import { DraftReview } from "@/components/DraftReview";
 import { PhotoPicker } from "@/components/PhotoPicker";
@@ -511,7 +512,10 @@ export default function HomePage() {
     <main className="app-shell">
       <header className="topbar">
         <a className="brand" href="/" aria-label="Gathered Stories home">
-          <span className="brand-mark" aria-hidden="true">g.</span>
+          <span className="brand-mark" aria-hidden="true">
+            <Image className="brand-icon-light" src="/icons/gathered-stories-light.png" alt="" width={768} height={768} unoptimized />
+            <Image className="brand-icon-dark" src="/icons/gathered-stories-dark.png" alt="" width={768} height={768} unoptimized />
+          </span>
           <span>gathered stories</span>
         </a>
         <div className="header-actions">
@@ -529,7 +533,12 @@ export default function HomePage() {
         <p className="eyebrow">A quiet studio for your next story</p>
         <h1>From wedding day to <em>venue story.</em></h1>
         <p className="intro-copy">Start with the details you already have. Shape a thoughtful draft in your voice, then carry it into ShowIt when you are ready.</p>
-        <div className="flourish" aria-hidden="true"><span className="flourish-mark">g.</span></div>
+        <div className="flourish" aria-hidden="true">
+          <span className="flourish-mark">
+            <Image className="brand-icon-light" src="/icons/gathered-stories-light.png" alt="" width={768} height={768} unoptimized />
+            <Image className="brand-icon-dark" src="/icons/gathered-stories-dark.png" alt="" width={768} height={768} unoptimized />
+          </span>
+        </div>
       </section>
 
       {!showWeddingList && <nav className="step-nav" aria-label="Wedding story steps" style={cssVar("--step-index", step)}>
@@ -632,7 +641,13 @@ export default function HomePage() {
       </div>
 
       <footer className="footer-note">
-        <span className="footer-sign"><span className="brand-mark" aria-hidden="true">g.</span>made for stories worth remembering.</span>
+        <span className="footer-sign">
+          <span className="brand-mark" aria-hidden="true">
+            <Image className="brand-icon-light" src="/icons/gathered-stories-light.png" alt="" width={768} height={768} unoptimized />
+            <Image className="brand-icon-dark" src="/icons/gathered-stories-dark.png" alt="" width={768} height={768} unoptimized />
+          </span>
+          made for stories worth remembering.
+        </span>
         <span>Draft-only · no auto-publishing · no raw photo uploads</span>
       </footer>
     </main>
