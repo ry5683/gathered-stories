@@ -529,6 +529,7 @@ export default function HomePage() {
         <p className="eyebrow">A quiet studio for your next story</p>
         <h1>From wedding day to <em>venue story.</em></h1>
         <p className="intro-copy">Start with the details you already have. Shape a thoughtful draft in your voice, then carry it into ShowIt when you are ready.</p>
+        <div className="flourish" aria-hidden="true"><span className="flourish-mark">g.</span></div>
       </section>
 
       {!showWeddingList && <nav className="step-nav" aria-label="Wedding story steps" style={cssVar("--step-index", step)}>
@@ -631,7 +632,7 @@ export default function HomePage() {
       </div>
 
       <footer className="footer-note">
-        <span>Made for stories worth remembering.</span>
+        <span className="footer-sign"><span className="brand-mark" aria-hidden="true">g.</span>made for stories worth remembering.</span>
         <span>Draft-only · no auto-publishing · no raw photo uploads</span>
       </footer>
     </main>
