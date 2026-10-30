@@ -58,3 +58,7 @@ export type WeddingSummary = {
   isPublished: boolean;
   inquiryCount: number;
 };
+
+// A saved vendor plus how many weddings credit them (from /api/vendors).
+export type LibraryVendor = import("@/lib/credits").Vendor & { weddingCount: number };
+export type { Vendor, WeddingVendor, VendorRole } from "@/lib/credits";

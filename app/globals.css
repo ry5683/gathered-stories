@@ -349,3 +349,25 @@ input:disabled, textarea:disabled { background: var(--surface-raised); color: va
 @media (forced-colors: active) {
   input:focus, textarea:focus, select:focus { outline-color: Highlight; }
 }
+
+/* Vendor credits: picker on the Wedding step, the saved-vendor library, and the share kit. */
+.vendor-panel, .vendor-library { margin-top: 18px; }
+.vendor-list { display: grid; gap: 10px; margin: 16px 0 0; padding: 0; list-style: none; }
+.vendor-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 13px 15px; border: 1px solid var(--glass-border); border-radius: 14px; background: var(--glass-raised); box-shadow: inset 0 1px 0 var(--glass-highlight); flex-wrap: wrap; }
+.vendor-row-copy { display: flex; min-width: 0; flex: 1 1 220px; flex-direction: column; gap: 2px; }
+.vendor-role { color: var(--secondary); font-family: var(--font-serif); font-size: 13px; font-style: italic; text-transform: lowercase; }
+.vendor-name { color: var(--text); font-weight: 600; overflow-wrap: anywhere; }
+.vendor-row-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.vendor-row-actions .icon-button { width: 34px; height: 34px; font-size: 16px; }
+.vendor-collab { align-items: center; }
+.vendor-collab-summary { justify-content: space-between; margin-top: 12px; }
+.vendor-add { display: flex; align-items: flex-end; gap: 10px; margin-top: 18px; }
+.vendor-add .field { flex: 1 1 auto; }
+.vendor-fields { margin-top: 14px; }
+.vendor-new-actions { margin-top: 14px; }
+.vendor-edit { width: 100%; }
+.vendor-profile { margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px solid var(--border); }
+@media (max-width: 640px) {
+  .vendor-add { flex-direction: column; align-items: stretch; }
+  .vendor-row-copy { flex-basis: 100%; }
+}

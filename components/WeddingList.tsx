@@ -10,11 +10,12 @@ type Props = {
   integrationsEnabled: boolean;
   onResume: (wedding: WeddingSummary) => void;
   onNew: () => void;
+  onOpenVendors: () => void;
   onInquiry: (postRecordId: string) => void;
   onMarkPublished: (postRecordId: string) => void;
 };
 
-export function WeddingList({ weddings, weeklyInquiries, integrationsEnabled, onResume, onNew, onInquiry, onMarkPublished }: Props) {
+export function WeddingList({ weddings, weeklyInquiries, integrationsEnabled, onResume, onNew, onOpenVendors, onInquiry, onMarkPublished }: Props) {
   return (
     <section className="panel wedding-list-panel" aria-labelledby="wedding-list-title">
       <div className="panel-heading">
@@ -22,7 +23,10 @@ export function WeddingList({ weddings, weeklyInquiries, integrationsEnabled, on
           <p className="eyebrow">Your stories</p>
           <h2 id="wedding-list-title">Pick up where you left off</h2>
         </div>
-        <button className="button button-primary" type="button" onClick={onNew}>New wedding</button>
+        <div className="inline-actions">
+          <button className="button button-secondary" type="button" onClick={onOpenVendors}>Vendors</button>
+          <button className="button button-primary" type="button" onClick={onNew}>New wedding</button>
+        </div>
       </div>
       <p className="muted-copy weekly-summary">This week: {weeklyInquiries} {weeklyInquiries === 1 ? "inquiry" : "inquiries"} from your posts.</p>
       {weddings.length === 0 ? (
