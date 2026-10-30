@@ -39,6 +39,8 @@ export async function generateWeddingDraft(input: {
   voice: "delicate" | "active";
   optionalInspiration?: string;
   voiceExamples?: string[];
+  // Prose roles such as "the florist". Vendor names, handles, and links are never passed in.
+  vendorRolesPresent?: string[];
 }): Promise<DraftContent> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("Anthropic is not configured on the server.");
@@ -61,6 +63,7 @@ export async function generateWeddingDraft(input: {
             editStyle: input.wedding.editStyle,
             musicLoved: input.wedding.musicLoved,
             musicRejected: input.wedding.musicRejected,
+            vendorRolesPresent: input.vendorRolesPresent?.slice(0, 15) ?? [],
           },
           photoDescriptions: input.photos.map((photo) => photo.description),
           photographerFavoriteMoment: input.favoriteMoment,
@@ -94,6 +97,7 @@ export async function generateWeddingDraft(input: {
             "Describe music by mood only; never claim a copyrighted track is trending.",
             "Return both optional captions and formats, but they will only be shown when the user asks.",
             "Use the venue and city in the title and naturally in the body.",
+            "Refer to vendors other than the venue by role only (for example \"the florist\"), and only roles listed in vendorRolesPresent. Never name them; a credits list is added separately.",
             "Return a single JSON object only; do not wrap it in markdown fences.",
           ],
         }),

@@ -371,3 +371,4 @@ input:disabled, textarea:disabled { background: var(--surface-raised); color: va
   .vendor-add { flex-direction: column; align-items: stretch; }
   .vendor-row-copy { flex-basis: 100%; }
 }
+.credits-preview pre { margin: 6px 0 0; white-space: pre-wrap; font: inherit; color: var(--text-soft, var(--text)); }

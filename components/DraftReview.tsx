@@ -2,6 +2,7 @@
 // WHY: Claude output is a private draft; autosave and explicit approval are separate actions.
 "use client";
 
+import { buildBlogCredits, CREDITS_HEADING, type WeddingVendor } from "@/lib/credits";
 import { useEffect, useState } from "react";
 import type { DraftContent } from "@/lib/types";
 import { cssVar } from "@/lib/motion";
@@ -17,9 +18,11 @@ type Props = {
   onVoiceChange: (voice: "delicate" | "active") => void;
   onRegenerate: () => void;
   onApprove: () => void;
+  vendors: WeddingVendor[];
+  onEditVendors: () => void;
 };
 
-export function DraftReview({ draft, approved, busy, voice, similarityWarning, saveStatus, onChange, onVoiceChange, onRegenerate, onApprove }: Props) {
+export function DraftReview({ draft, approved, busy, voice, similarityWarning, saveStatus, onChange, onVoiceChange, onRegenerate, onApprove, vendors, onEditVendors }: Props) {
   const [approvalConfirmed, setApprovalConfirmed] = useState(false);
   const contentKey = JSON.stringify(draft);
 
@@ -67,6 +70,14 @@ export function DraftReview({ draft, approved, busy, voice, similarityWarning, s
           <span className="field-label">Blog post</span>
           <textarea className="body-editor" rows={18} value={draft.body} onChange={(event) => update("body", event.target.value)} disabled={approved || busy} />
         </label>
+        <div className="field credits-preview">
+          <div className="pack-field-heading">
+            <span className="field-label">{CREDITS_HEADING}</span>
+            <button className="button button-secondary copy-button" type="button" onClick={onEditVendors}>Edit vendors</button>
+          </div>
+          <span className="field-source">Added after the body from your saved vendors. Not written by the AI.</span>
+          {vendors.length ? <pre>{buildBlogCredits(vendors)}</pre> : <p className="muted-copy">No vendors added yet.</p>}
+        </div>
         <label className="field">
           <span className="field-label">Reels / TikTok script</span>
           <textarea rows={6} value={draft.reelsScript} onChange={(event) => update("reelsScript", event.target.value)} disabled={approved || busy} />

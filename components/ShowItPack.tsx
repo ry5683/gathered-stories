@@ -5,16 +5,16 @@
 import { useState } from "react";
 import { makeShowItPack } from "@/lib/showit";
 import { cssVar } from "@/lib/motion";
-import type { DraftContent, PhotoDescription } from "@/lib/types";
+import type { DraftContent, PhotoDescription, WeddingVendor } from "@/lib/types";
 import { WordPressControls } from "@/components/WordPressControls";
 
-type Props = { draft: DraftContent; photos: PhotoDescription[]; draftId: string; integrationsEnabled: boolean };
+type Props = { draft: DraftContent; photos: PhotoDescription[]; draftId: string; integrationsEnabled: boolean; vendors: WeddingVendor[]; children?: React.ReactNode };
 
-export function ShowItPack({ draft, photos, draftId, integrationsEnabled }: Props) {
+export function ShowItPack({ draft, photos, draftId, integrationsEnabled, vendors, children }: Props) {
   const [copied, setCopied] = useState("");
   const [copyError, setCopyError] = useState("");
   const [copiedAll, setCopiedAll] = useState(false);
-  const pack = makeShowItPack(draft, photos);
+  const pack = makeShowItPack(draft, photos, vendors);
 
   // WHAT: Copies one formatted field and reports clipboard failures for manual recovery.
   // WHY: Copy is explicit and local; there is no publishing call or hidden ShowIt integration.
@@ -40,6 +40,8 @@ export function ShowItPack({ draft, photos, draftId, integrationsEnabled }: Prop
       `SOCIAL CAPTION\n${pack.socialCaption}`,
       `HASHTAGS\n${pack.hashtags}`,
       `REELS SCRIPT\n${pack.reelsScript}`,
+      ...(pack.vendorCredits ? [`VENDOR CREDITS\n${pack.vendorCredits}`, `CAPTION WITH CREDITS\n${pack.captionWithCredits}`] : []),
+      ...(pack.collaborators.length ? [`INSTAGRAM COLLABORATORS\n${pack.collaborators.join(" ")}`] : []),
       ...pack.extraCaptions.map((caption, index) => `ALTERNATIVE CAPTION ${index + 1}\n${caption}`),
       ...(pack.extraFormats.pinterest ? [`PINTEREST DESCRIPTION\n${pack.extraFormats.pinterest}`] : []),
       ...(pack.extraFormats.emailSneakPeek ? [`EMAIL SNEAK-PEEK\n${pack.extraFormats.emailSneakPeek}`] : []),
@@ -85,6 +87,9 @@ export function ShowItPack({ draft, photos, draftId, integrationsEnabled }: Prop
         <PackField index={5} label="Social caption" value={pack.socialCaption} button={copyButton("social-caption", pack.socialCaption)} />
         <PackField index={6} label="Hashtags" value={pack.hashtags} button={copyButton("hashtags", pack.hashtags)} />
         <PackField index={7} label="Reels / TikTok script" value={pack.reelsScript} button={copyButton("reels-script", pack.reelsScript)} />
+        {pack.vendorCredits && <PackField index={8} label="Vendor credits" value={pack.vendorCredits} button={copyButton("vendor-credits", pack.vendorCredits)} />}
+        {pack.vendorCredits && <PackField index={8} label="Caption with credits" value={pack.captionWithCredits} button={copyButton("caption-credits", pack.captionWithCredits)} />}
+        {pack.collaborators.length > 0 && <PackField index={8} label="Instagram collaborators" value={`${pack.collaborators.join(" ")}\n\nInvite these accounts as collaborators when you post (up to 5).`} button={copyButton("collaborators", pack.collaborators.join(" "))} />}
         {pack.photos.map((photo, index) => (
           <div className="pack-photo" key={`pack-photo-${index}`} style={cssVar("--i", index)}>
             <h3>Photo {index + 1}</h3>
@@ -103,6 +108,7 @@ export function ShowItPack({ draft, photos, draftId, integrationsEnabled }: Prop
         </details>
       </div>
       <WordPressControls draftId={draftId} integrationsEnabled={integrationsEnabled} />
+      {children}
     </section>
   );
 }

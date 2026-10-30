@@ -83,6 +83,7 @@ export default function HomePage() {
   const [weddingVendors, setWeddingVendors] = useState<WeddingVendor[]>([]);
   const [vendorSaveStatus, setVendorSaveStatus] = useState("");
   const [showVendorLibrary, setShowVendorLibrary] = useState(false);
+  const [reviewVendorsOpen, setReviewVendorsOpen] = useState(false);
   const [profile, setProfile] = useState({ photographerName: "", photographerInstagram: "" });
   const vendorSaveQueueRef = useRef<Promise<void>>(Promise.resolve());
   const vendorSaveVersionRef = useRef(0);
@@ -632,6 +633,18 @@ export default function HomePage() {
     if (await loadWeddingList()) setShowWeddingList(true);
   }
 
+
+  const vendorPicker = (
+    <VendorPicker
+      authenticated={authenticated}
+      library={vendorLibrary}
+      selected={weddingVendors}
+      saveStatus={vendorSaveStatus}
+      onChange={changeWeddingVendors}
+      onCreateVendor={createVendor}
+      onOpenLibrary={openVendorLibrary}
+    />
+  );
   return (
     <main className="app-shell">
       <header className="topbar">
@@ -703,15 +716,7 @@ export default function HomePage() {
         {step === 0 && (
           <>
             <WeddingForm wedding={wedding} onChange={changeWedding} />
-            <VendorPicker
-              authenticated={authenticated}
-              library={vendorLibrary}
-              selected={weddingVendors}
-              saveStatus={vendorSaveStatus}
-              onChange={changeWeddingVendors}
-              onCreateVendor={createVendor}
-              onOpenLibrary={openVendorLibrary}
-            />
+            {vendorPicker}
             <div className="step-actions">
               <span className="microcopy">{autoSaveStatus || "Your information stays private to your account when saved."}</span>
               <button className="button button-primary" type="button" onClick={continueToPhotos}>Continue to photos <span className="btn-arrow" aria-hidden="true">→</span></button>
@@ -757,7 +762,8 @@ export default function HomePage() {
 
         {step === 2 && draft && (
           <>
-            <DraftReview draft={asContent(draft)} approved={draft.status === "approved"} busy={busy} voice={voice} similarityWarning={draft.similarityWarning ?? false} saveStatus={autoSaveStatus} onChange={updateDraft} onVoiceChange={changeVoice} onRegenerate={regenerateDraft} onApprove={approveDraft} />
+            <DraftReview draft={asContent(draft)} approved={draft.status === "approved"} busy={busy} voice={voice} similarityWarning={draft.similarityWarning ?? false} saveStatus={autoSaveStatus} onChange={updateDraft} onVoiceChange={changeVoice} onRegenerate={regenerateDraft} onApprove={approveDraft} vendors={weddingVendors} onEditVendors={() => setReviewVendorsOpen((open) => !open)} />
+            {reviewVendorsOpen && vendorPicker}
             <div className="step-actions">
               <button className="button button-secondary" type="button" onClick={() => goToStep(1)}><span className="btn-arrow" aria-hidden="true">←</span> Back to photo notes</button>
               <span className="microcopy">Nothing is published from this app.</span>
@@ -767,7 +773,7 @@ export default function HomePage() {
 
         {step === 3 && draft?.status === "approved" && (
           <>
-            <ShowItPack draft={asContent(draft)} photos={photos} draftId={draft.id} integrationsEnabled={integrationsEnabled} />
+            <ShowItPack draft={asContent(draft)} photos={photos} draftId={draft.id} integrationsEnabled={integrationsEnabled} vendors={weddingVendors} />
             <div className="step-actions">
               <button className="button button-secondary" type="button" onClick={() => goToStep(2)}><span className="btn-arrow" aria-hidden="true">←</span> Back to approved draft</button>
               <span className="microcopy">Copy and paste each field into ShowIt when ready.</span>

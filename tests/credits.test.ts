@@ -134,3 +134,25 @@ describe("input checks", () => {
     assert.equal(isHttpsUrl("javascript:alert(1)"), false);
   });
 });
+
+describe("ShowIt pack credits", async () => {
+  const { makeShowItPack } = await import("../lib/showit");
+  const draft = {
+    title: "T", slug: "t", metaDescription: "m", body: "## Intro\n\nBody", caption: "A golden evening.", hashtags: "#orchardwedding",
+    reelsScript: "r", photoFileNames: ["a"], photoCaptions: ["c"], altTexts: ["alt"], extraCaptions: [], extraFormats: { pinterest: "", emailSneakPeek: "" },
+  } as unknown as Parameters<typeof makeShowItPack>[0];
+
+  it("adds credits, the credited caption, and collaborators only when vendors exist", () => {
+    const venue = link("venue", "The Orchard", { instagramHandle: "theorchard" });
+    venue.isCollaborator = true;
+    const florist = link("florist", "Bloom", { instagramHandle: "bloom" });
+    const pack = makeShowItPack(draft, [{ id: "p", description: "d" }], [florist, venue]);
+    assert.match(pack.vendorCredits, /^## Vendor credits/);
+    assert.equal(pack.captionWithCredits, "A golden evening.\n\nVenue: @theorchard\nFlorist: @bloom\n\n#orchardwedding");
+    assert.deepEqual(pack.collaborators, ["@theorchard"]);
+    const empty = makeShowItPack(draft, [{ id: "p", description: "d" }]);
+    assert.equal(empty.vendorCredits, "");
+    assert.equal(empty.captionWithCredits, "");
+    assert.deepEqual(empty.collaborators, []);
+  });
+});

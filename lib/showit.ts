@@ -1,5 +1,6 @@
 // WHAT: Converts a validated editable draft into the individual fields copied into ShowIt.
 // WHY: ShowIt publishing stays a deliberate, manual copy-and-paste action; this app never publishes.
+import { buildBlogCredits, captionWithCredits, orderVendors, type WeddingVendor } from "@/lib/credits";
 import type { DraftContent, PhotoDescription } from "@/lib/types";
 
 export function getHeadings(body: string): string[] {
@@ -10,7 +11,7 @@ export function getHeadings(body: string): string[] {
     .map((line) => line.replace(/^#{1,3}\s+/, ""));
 }
 
-export function makeShowItPack(draft: DraftContent, photos: PhotoDescription[]) {
+export function makeShowItPack(draft: DraftContent, photos: PhotoDescription[], vendors: WeddingVendor[] = []) {
   return {
     title: draft.title,
     slug: draft.slug,
@@ -27,5 +28,11 @@ export function makeShowItPack(draft: DraftContent, photos: PhotoDescription[]) 
     })),
     extraCaptions: draft.extraCaptions,
     extraFormats: draft.extraFormats,
+    // Built by code from saved vendors, never by the AI.
+    vendorCredits: buildBlogCredits(vendors),
+    captionWithCredits: vendors.length ? captionWithCredits(draft.caption, vendors, draft.hashtags) : "",
+    collaborators: orderVendors(vendors)
+      .filter((item) => item.isCollaborator && item.vendor.instagramHandle)
+      .map((item) => `@${item.vendor.instagramHandle}`),
   };
 }
