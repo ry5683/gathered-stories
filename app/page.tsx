@@ -137,7 +137,6 @@ export default function HomePage() {
 
   const loadWeddingVendors = useCallback(async (weddingId: string | undefined) => {
     const version = ++vendorLoadVersionRef.current;
-    vendorSaveVersionRef.current += 1;
     setWeddingVendors([]);
     setVendorSaveStatus("");
     if (!weddingId) return;
@@ -536,20 +535,25 @@ export default function HomePage() {
   function changeWeddingVendors(next: WeddingVendor[]) {
     setWeddingVendors(next);
     const version = ++vendorSaveVersionRef.current;
+    // Captured now, so a save still in the queue lands on this wedding even if another is opened meanwhile.
+    const targetId = weddingIdRef.current;
+    let resolvedId = targetId;
     setVendorSaveStatus("Saving vendors…");
     const run = vendorSaveQueueRef.current.catch(() => undefined).then(async () => {
-      if (version !== vendorSaveVersionRef.current) return;
-      const weddingId = weddingIdRef.current ?? await saveWeddingSnapshot();
+      // A newer change to the same wedding replaces this one.
+      if (version !== vendorSaveVersionRef.current && weddingIdRef.current === targetId) return;
+      const weddingId = targetId ?? await saveWeddingSnapshot();
+      resolvedId = weddingId;
       const saved = await requestJson<{ vendors: WeddingVendor[] }>(`/api/weddings/${weddingId}/vendors`, {
         vendors: next.map((item) => ({ vendorId: item.vendor.id, isCollaborator: item.isCollaborator })),
       }, "PUT");
-      if (version === vendorSaveVersionRef.current) {
+      if (version === vendorSaveVersionRef.current && weddingIdRef.current === weddingId) {
         setWeddingVendors(saved.vendors);
         setVendorSaveStatus("Vendors saved");
       }
     });
     vendorSaveQueueRef.current = run.catch((caught) => {
-      if (version === vendorSaveVersionRef.current) setVendorSaveStatus(caught instanceof Error ? caught.message : "Vendors could not be saved.");
+      if (version === vendorSaveVersionRef.current && weddingIdRef.current === resolvedId) setVendorSaveStatus(caught instanceof Error ? caught.message : "Vendors could not be saved.");
     });
   }
 
