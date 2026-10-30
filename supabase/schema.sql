@@ -251,8 +251,6 @@ alter table public.user_preferences
 alter table public.user_preferences
   add column if not exists photographer_instagram text
     check (photographer_instagram is null or photographer_instagram ~ '^[A-Za-z0-9._]{1,30}$');
--- A profile can now be saved before a theme is picked.
-alter table public.user_preferences alter column theme set default 'light';
 
 alter table public.vendors enable row level security;
 alter table public.wedding_vendors enable row level security;

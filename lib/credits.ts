@@ -95,10 +95,10 @@ export function isValidHandle(handle: string): boolean {
   return /^[A-Za-z0-9._]{1,30}$/.test(handle);
 }
 
-export function isHttpsUrl(value: string): boolean {
+export function isHttpsUrl(value: string, maxLength = 300): boolean {
   try {
     const url = new URL(value);
-    return url.protocol === "https:" && value.length <= 300;
+    return url.protocol === "https:" && value.length <= maxLength;
   } catch {
     return false;
   }
