@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { buildBlogCredits } from "@/lib/credits";
 import { approvableDraftContentSchema } from "@/lib/draft-validation";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { loadWeddingVendors } from "@/lib/vendors-server";
 import { decryptWordPressCredentials, wordpressRequest } from "@/lib/wordpress";
 
 const sendSchema = z.object({ draftId: z.string().uuid() });
@@ -32,6 +34,13 @@ export async function POST(request: Request) {
     if (draftError || !draft) return NextResponse.json({ error: "Only an approved draft can be sent." }, { status: 404 });
     const content = approvableDraftContentSchema.safeParse(draft.content);
     if (!content.success) return NextResponse.json({ error: "The approved draft is incomplete. Review it before sending." }, { status: 400 });
+    // Credits are built from the saved vendors at send time, so a fixed handle is always current.
+    let credits = "";
+    try {
+      credits = buildBlogCredits(await loadWeddingVendors(supabase, draft.wedding_id));
+    } catch {
+      return NextResponse.json({ error: "Vendor credits could not be loaded. Please try again." }, { status: 500 });
+    }
 
     const admin = createSupabaseAdminClient();
     adminClient = admin;
@@ -67,7 +76,7 @@ export async function POST(request: Request) {
       title: content.data.title,
       slug: content.data.slug,
       excerpt: content.data.metaDescription,
-      content: content.data.body,
+      content: credits ? `${content.data.body.trimEnd()}\n\n${credits}` : content.data.body,
       status: "draft",
     });
     if (

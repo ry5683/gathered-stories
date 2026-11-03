@@ -4,6 +4,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { generateWeddingDraft, InvalidClaudeResponseError } from "@/lib/claude";
+import { vendorRolesForPrompt } from "@/lib/credits";
+import { loadWeddingVendors } from "@/lib/vendors-server";
 import { resemblesApprovedWork } from "@/lib/similarity";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
@@ -98,7 +100,15 @@ export async function POST(request: Request) {
       musicLoved: wedding.music_loved,
       musicRejected: wedding.music_rejected,
     };
+    // Only role words ("the florist") reach the model; names and handles stay in the credits block.
+    let vendorRolesPresent: string[] = [];
+    try {
+      vendorRolesPresent = vendorRolesForPrompt(await loadWeddingVendors(supabase, wedding.id));
+    } catch {
+      vendorRolesPresent = [];
+    }
     const content = await generateWeddingDraft({
+      vendorRolesPresent,
       wedding: cleanWedding,
       photos: validation.data.photos,
       favoriteMoment: validation.data.favoriteMoment,

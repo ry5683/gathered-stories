@@ -56,5 +56,12 @@ export type WeddingSummary = {
   wordpressPostRecordId: string | null;
   wordpressDraftUrl: string | null;
   isPublished: boolean;
+  postUrl: string | null;
+  vendorCount: number;
+  vendorsSentCount: number;
   inquiryCount: number;
 };
+
+// A saved vendor plus how many weddings credit them (from /api/vendors).
+export type LibraryVendor = import("@/lib/credits").Vendor & { weddingCount: number };
+export type { Vendor, WeddingVendor, VendorRole } from "@/lib/credits";
