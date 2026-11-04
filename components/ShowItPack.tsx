@@ -1,5 +1,5 @@
-// WHAT: Formats the approved draft into discrete ShowIt fields with copy controls.
-// WHY: ShowIt stays a manual handoff; optional WordPress draft delivery is separate.
+// WHAT: The posting step: send to the blog (when connected), or copy and paste; then social copy.
+// WHY: Sending to the blog is the easy path, so it comes first; copy-paste stays as the fallback.
 "use client";
 
 import { useState } from "react";
@@ -67,49 +67,59 @@ export function ShowItPack({ draft, photos, draftId, integrationsEnabled, vendor
   }
 
   return (
-    <section className="panel showit-panel">
-      <div className="panel-heading">
-        <div>
-          <p className="eyebrow">Approved draft · manual handoff</p>
-          <h2>Your ShowIt-ready pack</h2>
-        </div>
-        <button className={`button button-primary ${copiedAll ? "is-copied" : ""}`} type="button" onClick={copyAll}>{copiedAll ? "All fields copied" : "Copy all"}</button>
-      </div>
-      <p className="muted-copy">Copy and paste into ShowIt yourself. ShowIt is never auto-published from this app.</p>
-      {copiedAll && <p className="status-message" role="status">Copy all is ready to paste. The pack remains here if you need individual fields.</p>}
-      {copyError && <p className="inline-error" role="alert">{copyError}</p>}
-      <div className="pack-fields">
-        <PackField index={0} label="Title" value={pack.title} button={copyButton("title", pack.title)} />
-        <PackField index={1} label="Slug" value={pack.slug} button={copyButton("slug", pack.slug)} />
-        <PackField index={2} label="Meta description" value={pack.metaDescription} button={copyButton("meta", pack.metaDescription)} />
-        <PackField index={3} label="Headings" value={pack.headings.length ? pack.headings.join("\n") : "No markdown headings found"} button={copyButton("headings", pack.headings.join("\n"))} />
-        <PackField index={4} label="Body" value={pack.body} button={copyButton("body", pack.body)} />
-        <PackField index={5} label="Social caption" value={pack.socialCaption} button={copyButton("social-caption", pack.socialCaption)} />
-        <PackField index={6} label="Hashtags" value={pack.hashtags} button={copyButton("hashtags", pack.hashtags)} />
-        <PackField index={7} label="Reels / TikTok script" value={pack.reelsScript} button={copyButton("reels-script", pack.reelsScript)} />
-        {pack.vendorCredits && <PackField index={8} label="Vendor credits" value={pack.vendorCredits} button={copyButton("vendor-credits", pack.vendorCredits)} />}
-        {pack.vendorCredits && <PackField index={8} label="Caption with credits" value={pack.captionWithCredits} button={copyButton("caption-credits", pack.captionWithCredits)} />}
-        {pack.collaborators.length > 0 && <PackField index={8} label="Instagram collaborators" value={`${pack.collaborators.join(" ")}\n\nInvite these accounts as collaborators when you post (up to 5).`} button={copyButton("collaborators", pack.collaborators.join(" "))} />}
-        {pack.photos.map((photo, index) => (
-          <div className="pack-photo" key={`pack-photo-${index}`} style={cssVar("--i", index)}>
-            <h3>Photo {index + 1}</h3>
-            <PackField index={8} label="Filename" value={photo.fileName} button={copyButton(`filename-${index}`, photo.fileName)} />
-            <PackField index={5} label="Caption" value={photo.caption} button={copyButton(`caption-${index}`, photo.caption)} />
-            <PackField index={6} label="Alt text" value={photo.altText} button={copyButton(`alt-${index}`, photo.altText)} />
+    <>
+      {integrationsEnabled && <WordPressControls draftId={draftId} integrationsEnabled={integrationsEnabled} onDelivered={onWordPressDelivered} />}
+      <section className="panel showit-panel">
+        <details className="pack-details" open={!integrationsEnabled}>
+          <summary>
+            <span className="pack-summary-title">{integrationsEnabled ? "Prefer to copy and paste?" : "Copy your post into Showit"}</span>
+          </summary>
+          <p className="muted-copy">Copy each piece and paste it into your Showit blog. &ldquo;Copy everything&rdquo; puts it all on your clipboard at once.</p>
+          <div className="inline-actions">
+            <button className={`button button-primary ${copiedAll ? "is-copied" : ""}`} type="button" onClick={copyAll}>{copiedAll ? "Copied everything" : "Copy everything"}</button>
           </div>
-        ))}
-        <details className="import-details">
-          <summary>Optional captions and formats</summary>
-          {pack.extraCaptions.map((caption, index) => (
-            <PackField key={`extra-caption-${index}`} index={index} label={`Alternative caption ${index + 1}`} value={caption} button={copyButton(`extra-caption-${index}`, caption)} />
-          ))}
-          {pack.extraFormats.pinterest && <PackField index={0} label="Pinterest description" value={pack.extraFormats.pinterest} button={copyButton("pinterest", pack.extraFormats.pinterest)} />}
-          {pack.extraFormats.emailSneakPeek && <PackField index={1} label="Email sneak-peek" value={pack.extraFormats.emailSneakPeek} button={copyButton("email-sneak-peek", pack.extraFormats.emailSneakPeek)} />}
+          {copyError && <p className="inline-error" role="alert">{copyError}</p>}
+          <div className="pack-fields">
+            <PackField index={0} label="Title" value={pack.title} button={copyButton("title", pack.title)} />
+            <PackField index={1} label="Blog post" value={pack.body} button={copyButton("body", pack.body)} />
+            {pack.vendorCredits && <PackField index={2} label="Vendor credits" value={pack.vendorCredits} button={copyButton("vendor-credits", pack.vendorCredits)} />}
+            <details className="import-details">
+              <summary>Photo names, captions and descriptions</summary>
+              <p className="muted-copy">Rename each photo file before uploading, and paste its description into the image&rsquo;s &ldquo;alt text&rdquo; box.</p>
+              {pack.photos.map((photo, index) => (
+                <div className="pack-photo" key={`pack-photo-${index}`} style={cssVar("--i", index)}>
+                  <h3>Photo {index + 1}</h3>
+                  <PackField index={0} label="File name" value={photo.fileName} button={copyButton(`filename-${index}`, photo.fileName)} />
+                  <PackField index={1} label="Caption" value={photo.caption} button={copyButton(`caption-${index}`, photo.caption)} />
+                  <PackField index={2} label="Description (alt text)" value={photo.altText} button={copyButton(`alt-${index}`, photo.altText)} />
+                </div>
+              ))}
+            </details>
+            <details className="import-details">
+              <summary>Google details</summary>
+              <PackField index={0} label="Web address ending" value={pack.slug} button={copyButton("slug", pack.slug)} />
+              <PackField index={1} label="Google summary" value={pack.metaDescription} button={copyButton("meta", pack.metaDescription)} />
+            </details>
+          </div>
         </details>
-      </div>
-      <WordPressControls draftId={draftId} integrationsEnabled={integrationsEnabled} onDelivered={onWordPressDelivered} />
+      </section>
+      <section className="panel showit-panel">
+        <details className="pack-details">
+          <summary><span className="pack-summary-title">Instagram &amp; TikTok</span></summary>
+          <div className="pack-fields">
+            <PackField index={0} label={pack.vendorCredits ? "Caption with vendor credits" : "Caption"} value={pack.vendorCredits ? pack.captionWithCredits : `${pack.socialCaption}\n\n${pack.hashtags}`} button={copyButton("caption-credits", pack.vendorCredits ? pack.captionWithCredits : `${pack.socialCaption}\n\n${pack.hashtags}`)} />
+            {pack.collaborators.length > 0 && <PackField index={1} label="Tag as collaborators" value={`${pack.collaborators.join(" ")}\n\nAdd these accounts as collaborators when you post (up to 5).`} button={copyButton("collaborators", pack.collaborators.join(" "))} />}
+            <PackField index={2} label="Reel / TikTok script" value={pack.reelsScript} button={copyButton("reels-script", pack.reelsScript)} />
+            {pack.extraCaptions.map((caption, index) => (
+              <PackField key={`extra-caption-${index}`} index={3 + index} label={`Another caption idea ${index + 1}`} value={caption} button={copyButton(`extra-caption-${index}`, caption)} />
+            ))}
+            {pack.extraFormats.pinterest && <PackField index={5} label="Pinterest description" value={pack.extraFormats.pinterest} button={copyButton("pinterest", pack.extraFormats.pinterest)} />}
+            {pack.extraFormats.emailSneakPeek && <PackField index={6} label="Sneak-peek email to the couple" value={pack.extraFormats.emailSneakPeek} button={copyButton("email-sneak-peek", pack.extraFormats.emailSneakPeek)} />}
+          </div>
+        </details>
+      </section>
       {children}
-    </section>
+    </>
   );
 }
 

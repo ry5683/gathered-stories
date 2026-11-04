@@ -21,9 +21,11 @@ type Props = {
   onAddVendor: (vendor: Vendor) => void;
   onCreateVendorAndAdd: (draft: VendorDraft) => Promise<{ vendor: Vendor; added: boolean }>;
   onOpenLibrary: () => void;
+  // Opened from "Edit vendors" on later steps; on the details step it starts folded unless filled.
+  startOpen?: boolean;
 };
 
-export function VendorPicker({ authenticated, library, selected, saveStatus, loadState, onRetryLoad, onChange, onAddVendor, onCreateVendorAndAdd, onOpenLibrary }: Props) {
+export function VendorPicker({ authenticated, library, selected, saveStatus, loadState, onRetryLoad, onChange, onAddVendor, onCreateVendorAndAdd, onOpenLibrary, startOpen = false }: Props) {
   const [pickId, setPickId] = useState("");
   const [newVendor, setNewVendor] = useState<VendorDraft>(emptyVendorDraft());
   const [adding, setAdding] = useState(false);
@@ -32,9 +34,8 @@ export function VendorPicker({ authenticated, library, selected, saveStatus, loa
   if (!authenticated) {
     return (
       <section className="panel vendor-panel" aria-labelledby="vendor-picker-title">
-        <p className="eyebrow">Vendor credits</p>
-        <h2 id="vendor-picker-title">Who worked this wedding?</h2>
-        <p className="muted-copy">Sign in to save vendors. Their credits are added to your post and captions exactly as you enter them.</p>
+        <h2 id="vendor-picker-title">Vendors <span className="optional-label">(optional)</span></h2>
+        <p className="muted-copy">Sign in to save vendors.</p>
       </section>
     );
   }
@@ -42,8 +43,7 @@ export function VendorPicker({ authenticated, library, selected, saveStatus, loa
   if (loadState !== "ready") {
     return (
       <section className="panel vendor-panel" aria-labelledby="vendor-picker-title">
-        <p className="eyebrow">Vendor credits</p>
-        <h2 id="vendor-picker-title">Who worked this wedding?</h2>
+        <h2 id="vendor-picker-title">Vendors <span className="optional-label">(optional)</span></h2>
         {loadState === "loading" ? (
           <p className="muted-copy" role="status">Loading this wedding&rsquo;s vendors…</p>
         ) : (
@@ -110,19 +110,19 @@ export function VendorPicker({ authenticated, library, selected, saveStatus, loa
   function applySuggestions() {
     const picks = new Set(suggestCollaborators(selected));
     onChange(selected.map((item) => ({ ...item, isCollaborator: picks.has(item.vendor.id) })));
-    setMessage(picks.size ? `Suggested ${picks.size} collaborator${picks.size === 1 ? "" : "s"}. Change any you like.` : "Add Instagram handles to suggest collaborators.");
+    setMessage(picks.size ? `Picked ${picks.size} to tag. Change any you like.` : "Add Instagram handles to your vendors first.");
   }
 
   return (
     <section className="panel vendor-panel" aria-labelledby="vendor-picker-title">
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">Vendor credits</p>
-          <h2 id="vendor-picker-title">Who worked this wedding?</h2>
+          <h2 id="vendor-picker-title">Vendors <span className="optional-label">(optional)</span></h2>
         </div>
-        <span className="count-badge">{selected.length} {selected.length === 1 ? "vendor" : "vendors"}</span>
       </div>
-      <p className="muted-copy">Credits are added to your post exactly as saved here. The AI only learns their roles (&ldquo;the florist&rdquo;), never names or handles.</p>
+      <details className="import-details vendor-details" open={startOpen || selected.length > 0}>
+      <summary>{selected.length ? `${selected.length} ${selected.length === 1 ? "vendor" : "vendors"} added` : "Add the venue, florist, planner and others who worked this wedding"}</summary>
+      <p className="muted-copy">They&rsquo;re listed at the end of your post with links, and you can tag them on Instagram. Vendors often share posts they&rsquo;re credited in.</p>
 
       {selected.length > 0 && (
         <ol className="vendor-list" aria-label="Vendors in credit order">
@@ -140,7 +140,7 @@ export function VendorPicker({ authenticated, library, selected, saveStatus, loa
                   disabled={!item.isCollaborator && (!item.vendor.instagramHandle || collaboratorCount >= MAX_COLLABORATORS)}
                   onChange={(event) => toggleCollaborator(index, event.target.checked)}
                 />
-                <span>Collaborator</span>
+                <span>Tag on Instagram</span>
               </label>
               <div className="vendor-row-actions">
                 <button className="icon-button" type="button" aria-label={`Move ${item.vendor.businessName} up`} onClick={() => move(index, -1)} disabled={index === 0}>↑</button>
@@ -154,16 +154,16 @@ export function VendorPicker({ authenticated, library, selected, saveStatus, loa
 
       {selected.length > 0 && (
         <div className="inline-actions vendor-collab-summary">
-          <span className="muted-copy">{collaboratorCount} of {MAX_COLLABORATORS} Instagram collaborators. Credits print venue first, then by role.</span>
-          <button className="button button-secondary copy-button" type="button" onClick={applySuggestions}>Suggest collaborators</button>
+          <span className="muted-copy">{collaboratorCount} of {MAX_COLLABORATORS} tagged (Instagram allows 5).</span>
+          <button className="button button-secondary copy-button" type="button" onClick={applySuggestions}>Pick for me</button>
         </div>
       )}
 
       <div className="vendor-add">
         <label className="field" htmlFor="vendor-pick">
-          <span className="field-label">Add a saved vendor</span>
+          <span className="field-label">Add a vendor you&rsquo;ve used before</span>
           <select id="vendor-pick" value={pickId} onChange={(event) => setPickId(event.target.value)} disabled={available.length === 0}>
-            <option value="">{available.length === 0 ? "No other saved vendors yet" : "Choose a vendor…"}</option>
+            <option value="">{available.length === 0 ? "None saved yet. Add a new one below." : "Choose a vendor…"}</option>
             {available.map((vendor) => (
               <option key={vendor.id} value={vendor.id}>{vendor.businessName} · {vendor.roleLabel || ROLE_LABELS[vendor.role]}</option>
             ))}
@@ -173,11 +173,11 @@ export function VendorPicker({ authenticated, library, selected, saveStatus, loa
       </div>
 
       <details className="import-details">
-        <summary>New vendor</summary>
+        <summary>Add a new vendor</summary>
         <VendorFields value={newVendor} onChange={setNewVendor} idPrefix="new-vendor" />
         <div className="inline-actions vendor-new-actions">
           <button className="button button-primary" type="button" onClick={createAndAdd} disabled={adding} aria-busy={adding}>{adding ? "Saving…" : "Save and add"}</button>
-          <button className="button button-secondary" type="button" onClick={onOpenLibrary}>Manage all vendors</button>
+          <button className="button button-secondary" type="button" onClick={onOpenLibrary}>See all my vendors</button>
         </div>
       </details>
 
@@ -185,6 +185,7 @@ export function VendorPicker({ authenticated, library, selected, saveStatus, loa
         {message && <span className="status-message" role="status">{message}</span>}
         {saveStatus && <span className="microcopy">{saveStatus}</span>}
       </div>
+      </details>
     </section>
   );
 }
