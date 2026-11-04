@@ -79,7 +79,6 @@ export function VendorLibrary({ vendors, onSave, onDelete, onClose, profile, onS
     <section className="panel vendor-library" aria-labelledby="vendor-library-title">
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">Your vendors</p>
           <h2 id="vendor-library-title">Saved vendors</h2>
         </div>
         <button className="button button-secondary" type="button" onClick={onClose}>Done</button>

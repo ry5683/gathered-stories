@@ -4,6 +4,12 @@
 
 import type { WeddingSummary } from "@/lib/types";
 
+const STATUS_LABELS: Record<WeddingSummary["status"], string> = {
+  Draft: "In progress",
+  Approved: "Ready to post",
+  Sent: "On your blog",
+};
+
 type Props = {
   weddings: WeddingSummary[];
   weeklyInquiries: number;
@@ -20,17 +26,16 @@ export function WeddingList({ weddings, weeklyInquiries, integrationsEnabled, on
     <section className="panel wedding-list-panel" aria-labelledby="wedding-list-title">
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">Your stories</p>
-          <h2 id="wedding-list-title">Pick up where you left off</h2>
+          <h2 id="wedding-list-title">My weddings</h2>
         </div>
         <div className="inline-actions">
-          <button className="button button-secondary" type="button" onClick={onOpenVendors}>Vendors</button>
+          <button className="button button-secondary" type="button" onClick={onOpenVendors}>My vendors</button>
           <button className="button button-primary" type="button" onClick={onNew}>New wedding</button>
         </div>
       </div>
-      <p className="muted-copy weekly-summary">This week: {weeklyInquiries} {weeklyInquiries === 1 ? "inquiry" : "inquiries"} from your posts.</p>
+      {weeklyInquiries > 0 && <p className="muted-copy weekly-summary">This week: {weeklyInquiries} {weeklyInquiries === 1 ? "inquiry" : "inquiries"} from your posts.</p>}
       {weddings.length === 0 ? (
-        <p className="muted-copy">Your saved weddings will appear here.</p>
+        <p className="muted-copy">No weddings yet. Tap &ldquo;New wedding&rdquo; to start.</p>
       ) : (
         <ul className="wedding-list">
           {weddings.map((item) => (
@@ -38,32 +43,31 @@ export function WeddingList({ weddings, weeklyInquiries, integrationsEnabled, on
               <div className="wedding-list-copy">
                 <h3>{item.wedding.venue}</h3>
                 <p>{item.wedding.city}{item.wedding.weddingDate ? ` · ${item.wedding.weddingDate}` : ""}</p>
-                <span className={`status-pill status-${item.status.toLowerCase()}`}>{item.status}</span>
+                <span className={`status-pill status-${item.status.toLowerCase()}`}>{STATUS_LABELS[item.status]}</span>
                 {item.vendorCount > 0 && item.status !== "Draft" && (
                   <span className={`status-pill vendor-sent-pill ${item.vendorsSentCount === item.vendorCount ? "status-approved" : ""}`}>Vendors sent {item.vendorsSentCount} of {item.vendorCount}</span>
                 )}
                 {item.wordpressDraftUrl && (
                   <p className="muted-copy">
-                    {item.isPublished ? "Marked as published in WordPress." : "Sent to WordPress as a draft. Publish it there before marking it live."}
-                    {" "}<a href={item.wordpressDraftUrl} target="_blank" rel="noreferrer">{item.isPublished ? "Open WordPress post" : "Open WordPress draft"}</a>
+                    {item.isPublished ? "Live on your blog." : "On your blog as a draft. Publish it in WordPress, then tap \"I published this\"."}
+                    {" "}<a href={item.wordpressDraftUrl} target="_blank" rel="noreferrer">Open in WordPress</a>
                   </p>
                 )}
                 {item.isPublished && <p className="muted-copy">{item.inquiryCount} {item.inquiryCount === 1 ? "inquiry" : "inquiries"} recorded.</p>}
               </div>
               <div className="wedding-list-actions">
-                <button className="button button-secondary" type="button" onClick={() => onResume(item)}>Resume</button>
+                <button className="button button-secondary" type="button" onClick={() => onResume(item)}>Open</button>
                 {integrationsEnabled && item.wordpressPostRecordId && !item.isPublished && (
                   <button className="button button-secondary" type="button" onClick={() => onMarkPublished(item.wordpressPostRecordId!)}>I published this</button>
                 )}
                 {integrationsEnabled && item.wordpressPostRecordId && item.isPublished && (
-                  <button className="button button-secondary" type="button" onClick={() => onInquiry(item.wordpressPostRecordId!)}>Inquiry from this post</button>
+                  <button className="button button-secondary" type="button" onClick={() => onInquiry(item.wordpressPostRecordId!)}>A couple inquired from this post</button>
                 )}
               </div>
             </li>
           ))}
         </ul>
       )}
-      {!integrationsEnabled && <p className="status-message">WordPress delivery needs server-side Supabase integration credentials; copy-all remains available.</p>}
     </section>
   );
 }

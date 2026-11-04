@@ -15,33 +15,19 @@ type Props = {
   onChange: (wedding: Wedding) => void;
 };
 
-const SOURCES: Record<WeddingTextField, string> = {
-  venue: "Aisle Planner",
-  city: "Aisle Planner",
-  weddingDate: "Aisle Planner",
-  ceremonyTime: "HoneyBook timeline",
-  receptionTime: "HoneyBook timeline",
-  dressCode: "Aisle Planner",
-  palette: "Aisle Planner",
-  editStyle: "Aisle Planner",
-  musicLoved: "HoneyBook music",
-  musicRejected: "HoneyBook music",
-};
-
-const CORE_FIELDS: Array<{ key: "venue" | "city" | "weddingDate"; label: string }> = [
-  { key: "venue", label: "Venue" },
-  { key: "city", label: "City" },
-  { key: "weddingDate", label: "Date" },
+const CORE_FIELDS: Array<{ key: "venue" | "city" | "weddingDate"; label: string; placeholder: string; type?: string }> = [
+  { key: "venue", label: "Venue", placeholder: "e.g. The Churchill House" },
+  { key: "city", label: "City", placeholder: "e.g. Escondido" },
+  // Plain text, not a date picker: older weddings and HoneyBook pastes hold dates like "Aug 30, 2025".
+  { key: "weddingDate", label: "Wedding date", placeholder: "e.g. August 30, 2025" },
 ];
 
-const DETAIL_FIELDS: Array<{ key: Exclude<WeddingTextField, "venue" | "city" | "weddingDate">; label: string; multiline?: boolean }> = [
-  { key: "ceremonyTime", label: "Ceremony time" },
-  { key: "receptionTime", label: "Reception time" },
-  { key: "dressCode", label: "Dress code" },
-  { key: "palette", label: "Color palette" },
-  { key: "editStyle", label: "Edit style" },
-  { key: "musicLoved", label: "Music they love", multiline: true },
-  { key: "musicRejected", label: "Music to reject", multiline: true },
+// Only details the writer actually uses. Ceremony/reception times and dress code are still saved
+// for older weddings but aren't shown, because they never reach the blog post.
+const DETAIL_FIELDS: Array<{ key: "palette" | "editStyle" | "musicLoved"; label: string; placeholder: string }> = [
+  { key: "palette", label: "Colors", placeholder: "e.g. black, deep red, gold" },
+  { key: "editStyle", label: "Style or vibe", placeholder: "e.g. moody, goth, rock and roll" },
+  { key: "musicLoved", label: "Music the couple loved", placeholder: "e.g. 80s rock, mariachi" },
 ];
 
 export function WeddingForm({ wedding, onChange }: Props) {
@@ -94,12 +80,12 @@ export function WeddingForm({ wedding, onChange }: Props) {
         }
       }
       if (!updated) {
-        setImportMessage("No recognized details found. Include labels such as Venue, City, Date, Palette, or Edit Style.");
+        setImportMessage("Nothing we recognize. Make sure lines look like \"Venue: ...\" or \"Date: ...\".");
         return;
       }
       onChange(next);
       setPastedText("");
-      setImportMessage(`${updated} field${updated === 1 ? "" : "s"} imported. The pasted text was cleared.`);
+      setImportMessage(`Filled in ${updated} field${updated === 1 ? "" : "s"}.`);
     } catch (error) {
       setImportMessage(error instanceof Error ? error.message : "Could not read those details.");
     }
@@ -109,42 +95,35 @@ export function WeddingForm({ wedding, onChange }: Props) {
     <section className="panel form-panel" aria-labelledby="wedding-details-title">
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">Wedding details</p>
-          <h2 id="wedding-details-title">Choose a wedding</h2>
+          <h2 id="wedding-details-title">Wedding details</h2>
         </div>
       </div>
-      <p className="muted-copy">Start with the venue, city, and date. Details already on file can stay as they are.</p>
+      <p className="muted-copy">Where and when was it? These go into your blog post title, which helps couples find you on Google.</p>
       <div className="field-grid">
-        {CORE_FIELDS.map(({ key, label }) => (
+        {CORE_FIELDS.map(({ key, label, placeholder, type }) => (
           <label className="field" key={key}>
             <span className="field-label">{label}</span>
-            <span className="field-source">{SOURCES[key]}</span>
-            <input value={wedding[key]} onChange={(event) => onChange({ ...wedding, [key]: event.target.value })} />
+            <input type={type ?? "text"} placeholder={placeholder} value={wedding[key]} onChange={(event) => onChange({ ...wedding, [key]: event.target.value })} />
           </label>
         ))}
       </div>
       <details className="import-details">
-        <summary>Details — already filled in, tap to edit</summary>
+        <summary>More details (optional)</summary>
         <div className="field-grid detail-grid">
-          {DETAIL_FIELDS.map(({ key, label, multiline }) => (
-            <label className={`field ${multiline ? "field-wide" : ""}`} key={key}>
+          {DETAIL_FIELDS.map(({ key, label, placeholder }) => (
+            <label className="field" key={key}>
               <span className="field-label">{label}</span>
-              <span className="field-source">{SOURCES[key]}</span>
-              {multiline ? (
-                <textarea rows={2} value={wedding[key]} onChange={(event) => onChange({ ...wedding, [key]: event.target.value })} />
-              ) : (
-                <input value={wedding[key]} onChange={(event) => onChange({ ...wedding, [key]: event.target.value })} />
-              )}
+              <input placeholder={placeholder} value={wedding[key]} onChange={(event) => onChange({ ...wedding, [key]: event.target.value })} />
             </label>
           ))}
         </div>
       </details>
       <details className="import-details paste-details">
-        <summary>Paste HoneyBook details here</summary>
-        <p className="muted-copy">Only recognized venue details are kept. Contact information and other questionnaire text are ignored; HoneyBook is not directly synced.</p>
-        <textarea aria-label="Paste HoneyBook details" rows={4} placeholder={"Venue: Example Estate\nCity: Example City\nDate: 2026-09-20\nPalette: Sage and ivory\nEdit Style: Film-inspired"} value={pastedText} onChange={(event) => setPastedText(event.target.value)} />
+        <summary>Copy details from HoneyBook (optional)</summary>
+        <p className="muted-copy">Copy the venue, city and date from HoneyBook and paste them here. We&rsquo;ll fill in the boxes above. Anything else you paste is ignored.</p>
+        <textarea aria-label="Paste details from HoneyBook" rows={4} placeholder={"Venue: The Churchill House\nCity: Escondido\nDate: 2025-08-30"} value={pastedText} onChange={(event) => setPastedText(event.target.value)} />
         <div className="inline-actions">
-          <button className="button button-secondary" type="button" onClick={importFields} disabled={!pastedText.trim()}>Import details</button>
+          <button className="button button-secondary" type="button" onClick={importFields} disabled={!pastedText.trim()}>Fill in the boxes</button>
           {importMessage && <span className="status-message" role="status">{importMessage}</span>}
         </div>
       </details>
