@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { buildBlogCredits } from "@/lib/credits";
+import { markdownToHtml } from "@/lib/markdown-html";
 import { approvableDraftContentSchema } from "@/lib/draft-validation";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
@@ -76,7 +77,8 @@ export async function POST(request: Request) {
       title: content.data.title,
       slug: content.data.slug,
       excerpt: content.data.metaDescription,
-      content: credits ? `${content.data.body.trimEnd()}\n\n${credits}` : content.data.body,
+      // WordPress expects HTML; the draft and credits are Markdown (still used as-is in the copy pack).
+      content: markdownToHtml(credits ? `${content.data.body.trimEnd()}\n\n${credits}` : content.data.body),
       status: "draft",
     });
     if (

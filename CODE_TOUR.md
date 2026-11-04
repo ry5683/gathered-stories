@@ -32,7 +32,8 @@ This guide follows the app as it exists in the repository. The new-wedding form 
 - `lib/wordpress.ts` — encrypts WordPress credentials and validates/pins public HTTPS destinations before making non-redirecting requests.
 - `lib/supabase-browser.ts` and `lib/supabase-server.ts` — public browser client and cookie-backed server client.
 - `lib/types.ts` — the shared data shapes; `lib/theme.ts` — the theme value names; `lib/motion.ts` — typed CSS animation indices.
-- `supabase/schema.sql` and `supabase/migrations/20261030_v2_foundation.sql` — resumable state, integration tables, grants, and row-level security policies. `supabase/migrations/20261031_vendors.sql` adds `vendors`, `wedding_vendors`, the post link and credit-line columns, with RLS checked by `supabase/tests/vendors_rls_test.sql`.
+- `supabase/schema.sql` and `supabase/migrations/20261030_v2_foundation.sql` — resumable state, integration tables, grants, and row-level security policies. `supabase/migrations/20261031_vendors.sql` adds `vendors`, `wedding_vendors`, the post link and credit-line columns, with RLS checked by `supabase/tests/vendors_rls_test.sql`. `supabase/migrations/20261103_vendor_save_fixes.sql` adds `replace_wedding_vendors`, which saves a wedding's whole vendor set in one transaction (tested by `supabase/tests/vendor_save_fixes_test.sql`), and a per-wedding lock in the collaborator-limit trigger.
+- `lib/markdown-html.ts` — converts the draft's Markdown body and credits into escaped HTML for WordPress (the copy pack keeps Markdown). `lib/post-links.ts` — gives vendors the public `?p=` post link, never the WordPress editor link.
 
 ## One draft from click to copy
 
@@ -50,7 +51,7 @@ Step 2: click "Write draft"
   → Approve calls /api/drafts/[id]/approve and changes the status to "approved"
   → Step 4 uses lib/showit.ts to format all copy-ready fields for ShowIt,
     including code-built vendor credits from lib/credits.ts
-  → optional WordPress delivery creates status=draft only; it never publishes
+  → optional WordPress delivery converts the Markdown to HTML and creates status=draft only; it never publishes
 ```
 
 No request publishes content. WordPress credentials are AES-256-GCM encrypted with a server-only key, and outbound requests require a public HTTPS destination pinned to a validated IP. Supabase policies use `auth.uid()` for every user-owned row; integration tables are server-only.

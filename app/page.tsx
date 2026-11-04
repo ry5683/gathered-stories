@@ -83,6 +83,9 @@ export default function HomePage() {
   const [vendorLibrary, setVendorLibrary] = useState<LibraryVendor[]>([]);
   const [weddingVendors, setWeddingVendors] = useState<WeddingVendor[]>([]);
   const [vendorSaveStatus, setVendorSaveStatus] = useState("");
+  // "loading" and "failed" lock the picker: saving is whole-set, so editing an unloaded (empty-looking)
+  // list would replace and erase the wedding's real vendors and their sent dates.
+  const [vendorLoadState, setVendorLoadState] = useState<"ready" | "loading" | "failed">("ready");
   const [showVendorLibrary, setShowVendorLibrary] = useState(false);
   const [reviewVendorsOpen, setReviewVendorsOpen] = useState(false);
   const [postLink, setPostLink] = useState<PostLinkInfo>({ wordpressUrl: null, isPublished: false, postUrl: null });
@@ -90,6 +93,10 @@ export default function HomePage() {
   const vendorSaveQueueRef = useRef<Promise<void>>(Promise.resolve());
   const vendorSaveVersionRef = useRef(0);
   const vendorLoadVersionRef = useRef(0);
+  const weddingVendorsRef = useRef<WeddingVendor[]>([]);
+  useEffect(() => {
+    weddingVendorsRef.current = weddingVendors;
+  }, [weddingVendors]);
   const authStateRef = useRef(false);
   const workAreaRef = useRef<HTMLDivElement>(null);
   const alertsRef = useRef<HTMLDivElement>(null);
@@ -139,12 +146,19 @@ export default function HomePage() {
     const version = ++vendorLoadVersionRef.current;
     setWeddingVendors([]);
     setVendorSaveStatus("");
-    if (!weddingId) return;
+    if (!weddingId) {
+      setVendorLoadState("ready");
+      return;
+    }
+    setVendorLoadState("loading");
     try {
       const result = await requestJson<{ vendors: WeddingVendor[] }>(`/api/weddings/${weddingId}/vendors`, undefined, "GET");
-      if (version === vendorLoadVersionRef.current) setWeddingVendors(result.vendors);
+      if (version === vendorLoadVersionRef.current) {
+        setWeddingVendors(result.vendors);
+        setVendorLoadState("ready");
+      }
     } catch {
-      if (version === vendorLoadVersionRef.current) setVendorSaveStatus("This wedding's vendors could not be loaded.");
+      if (version === vendorLoadVersionRef.current) setVendorLoadState("failed");
     }
   }, []);
 
@@ -160,6 +174,10 @@ export default function HomePage() {
       setWeddingList([]);
       setVendorLibrary([]);
       setWeddingVendors([]);
+      setVendorLoadState("ready");
+      // Account-specific; the next sign-in must not inherit the last wedding's link or credit line.
+      setPostLink({ wordpressUrl: null, isPublished: false, postUrl: null });
+      setProfile({ photographerName: "", photographerInstagram: "" });
       setShowVendorLibrary(false);
       setShowWeddingList(false);
       if (wasAuthenticated) {
@@ -533,6 +551,7 @@ export default function HomePage() {
 
   // The vendor set saves as a whole, in order, after the wedding itself has an id.
   function changeWeddingVendors(next: WeddingVendor[]) {
+    weddingVendorsRef.current = next;
     setWeddingVendors(next);
     const version = ++vendorSaveVersionRef.current;
     // Captured now, so a save still in the queue lands on this wedding even if another is opened meanwhile.
@@ -571,6 +590,22 @@ export default function HomePage() {
     const result = await requestJson<{ vendor: LibraryVendor }>("/api/vendors", vendorPayload(draft));
     setVendorLibrary((current) => [...current, result.vendor].sort((a, b) => a.businessName.localeCompare(b.businessName)));
     return result.vendor;
+  }
+
+  // Creates a vendor, then appends it to the wedding's *latest* selection (not the list as it was
+  // when the button was clicked), and only if the same wedding is still open.
+  async function createVendorAndAdd(draft: VendorDraft): Promise<{ vendor: Vendor; added: boolean }> {
+    const targetId = weddingIdRef.current;
+    const vendor = await createVendor(draft);
+    if (weddingIdRef.current !== targetId) return { vendor, added: false };
+    addVendorToWedding(vendor);
+    return { vendor, added: true };
+  }
+
+  function addVendorToWedding(vendor: Vendor) {
+    const current = weddingVendorsRef.current;
+    if (current.some((item) => item.vendor.id === vendor.id)) return;
+    changeWeddingVendors([...current, { vendor, sortOrder: current.length, isCollaborator: false, sharedAt: null }]);
   }
 
   async function updateVendor(id: string, draft: VendorDraft) {
@@ -667,8 +702,11 @@ export default function HomePage() {
       library={vendorLibrary}
       selected={weddingVendors}
       saveStatus={vendorSaveStatus}
+      loadState={vendorLoadState}
+      onRetryLoad={() => void loadWeddingVendors(weddingIdRef.current)}
       onChange={changeWeddingVendors}
-      onCreateVendor={createVendor}
+      onAddVendor={addVendorToWedding}
+      onCreateVendorAndAdd={createVendorAndAdd}
       onOpenLibrary={openVendorLibrary}
     />
   );
