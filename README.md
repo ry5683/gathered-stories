@@ -16,7 +16,12 @@ AI and integration credentials are read only by server-side code and are never e
 
 ## Use the workflow
 
-The Wedding step starts blank. Sign in with the email link to autosave and resume weddings. Add descriptions for 10–20 photos and a favorite moment, then click **Write draft**. Claude returns validated JSON, which is saved as a draft. Edit or regenerate it before confirming the approval checkbox and choosing **Approve draft**. Approval only marks the draft; the final step provides a **Copy all** option and individual fields for manual ShowIt entry.
+Signed-out visitors see one screen: an email box and **Email me a sign-in link** (no password). After signing in, there are four steps:
+
+1. **Details:** venue, city and date (plus optional colors, style and music, a HoneyBook paste box, and vendors).
+2. **Photos:** a few words about each of 10–20 favorite photos, the favorite moment, and the tone (Fun & playful or Soft & romantic). **Write my blog post** creates the draft.
+3. **Review:** the title and post up front; Instagram & TikTok copy and Google details (web address, Google summary, photo descriptions) are folded away. **Looks good, next step** approves it; nothing is published.
+4. **Post:** **Send to my blog** (once WordPress is connected) creates a WordPress draft; "Prefer to copy and paste?" holds the Showit copy fields; then social copy and vendor messages.
 
 The Claude request includes only venue, city, date, style, palette, music preferences, the roles of credited vendors (never their names), photo descriptions, the photographer's favorite moment, and optional inspiration. Times and dress code remain available in the form but are not sent to the model. Email addresses and phone numbers in free-text are rejected before the AI call; do not include names or other personal details in free-text fields. If enabled, prior approved work is reduced locally to aggregate style cues; the original draft text is never sent as an example.
 

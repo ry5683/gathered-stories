@@ -372,7 +372,7 @@ input:disabled, textarea:disabled { background: var(--surface-raised); color: va
   .vendor-row-copy { flex-basis: 100%; }
 }
 .credits-preview pre { margin: 6px 0 0; white-space: pre-wrap; font: inherit; color: var(--text-soft, var(--text)); }
-.share-kit { margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--border); }
+.share-kit { margin-top: 0; }
 .share-kit-setup { margin-top: 10px; }
 .share-kit-warning { margin-top: 6px; }
 .share-row { align-items: flex-start; }
@@ -384,3 +384,24 @@ input:disabled, textarea:disabled { background: var(--surface-raised); color: va
 .vendor-row-copy .status-pill { align-self: flex-start; margin-top: 4px; }
 .vendor-add .button { white-space: nowrap; }
 .share-kit-setup .microcopy { margin-top: 8px; }
+
+/* Simplified layout (Nov 2026): plain numbered steps, roomier collapsible sections, sign-in card. */
+.plain-steps { margin: 4px 0 14px; padding-left: 24px; list-style: decimal outside; color: var(--text); font-size: 15px; line-height: 1.6; }
+.plain-steps li + li { margin-top: 4px; }
+.draft-panel .import-details textarea, .draft-panel .import-details input { font-family: inherit; font-size: inherit; margin: 0; }
+.import-details > .field, .import-details > p { margin-top: 14px; }
+.pack-details > summary { cursor: pointer; list-style-position: inside; }
+.pack-summary-title { font-family: var(--font-serif); font-size: 22px; color: var(--text); }
+.pack-details[open] > summary { margin-bottom: 12px; }
+.pack-details .inline-actions { margin: 6px 0 14px; }
+.rewrite-details .inline-actions { margin-top: 12px; }
+.optional-label { color: var(--muted); font-size: 14px; font-weight: 400; }
+.signin-card { max-width: 520px; margin: 24px auto; text-align: left; }
+.signin-card h1 { margin: 0 0 10px; font-family: var(--font-serif); font-size: clamp(30px, 6vw, 40px); font-weight: 400; line-height: 1.1; }
+.signin-card .auth-controls { display: flex; flex-direction: column; align-items: stretch; gap: 12px; margin-top: 18px; }
+.signin-card .auth-input { width: 100%; }
+.plain-steps li { display: list-item; }
+.step-view > * + .panel { margin-top: 18px; }
+.wordpress-panel .field-source + .wordpress-form { margin-top: 16px; }
+.wordpress-panel > .field-source { display: block; margin-bottom: 16px; }
+.vendor-details { margin-top: 0; padding-top: 0; border-top: 0; }

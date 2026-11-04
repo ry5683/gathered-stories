@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { AuthPanel } from "@/components/AuthPanel";
+import { AuthPanel, SignInCard } from "@/components/AuthPanel";
 import { DraftReview } from "@/components/DraftReview";
 import { PhotoPicker } from "@/components/PhotoPicker";
 import { ShowItPack } from "@/components/ShowItPack";
@@ -37,11 +37,12 @@ const initialWedding: Wedding = {
   favoriteMoment: "",
   optionalInspiration: "",
   currentStep: 0,
-  voice: "delicate",
+  // Llena Vida's style is playful; "delicate" stays available as "Soft & romantic".
+  voice: "active",
   useVoiceExamples: true,
 };
 
-const steps = ["Wedding", "Photos + moment", "Review draft", "ShowIt pack"];
+const steps = ["Details", "Photos", "Review", "Post"];
 
 async function requestJson<T>(url: string, body?: unknown, method = "POST"): Promise<T> {
   const response = await fetch(url, {
@@ -73,6 +74,8 @@ export default function HomePage() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [authenticated, setAuthenticated] = useState(false);
+  // False until the first sign-in check finishes, so signed-in people don't see the sign-in card flash.
+  const [authChecked, setAuthChecked] = useState(false);
   const [weddingList, setWeddingList] = useState<WeddingSummary[]>([]);
   const [weeklyInquiries, setWeeklyInquiries] = useState(0);
   const [integrationsEnabled, setIntegrationsEnabled] = useState(false);
@@ -166,6 +169,7 @@ export default function HomePage() {
     const wasAuthenticated = authStateRef.current;
     authStateRef.current = isAuthenticated;
     setAuthenticated(isAuthenticated);
+    setAuthChecked(true);
     if (isAuthenticated) {
       void loadWeddingList();
       void loadVendorLibrary();
@@ -377,7 +381,6 @@ export default function HomePage() {
       await draftSaveQueueRef.current;
       const saved = await requestJson<GeneratedDraft>(`/api/drafts/${draft.id}`, asContent(draft), "PATCH");
       setDraft({ ...saved, similarityWarning: draft.similarityWarning });
-      setNotice("Draft edits saved.");
       return true;
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Draft could not be saved.");
@@ -495,11 +498,6 @@ export default function HomePage() {
 
   function changeVoice(next: "delicate" | "active") {
     setVoice(next);
-    markChanged();
-  }
-
-  function changeUseVoiceExamples(next: boolean) {
-    setUseVoiceExamples(next);
     markChanged();
   }
 
@@ -708,6 +706,7 @@ export default function HomePage() {
       onAddVendor={addVendorToWedding}
       onCreateVendorAndAdd={createVendorAndAdd}
       onOpenLibrary={openVendorLibrary}
+      startOpen={step > 0}
     />
   );
   return (
@@ -724,26 +723,12 @@ export default function HomePage() {
           <AuthPanel onAuthChange={handleAuthChange} />
           {authenticated && weddingList.length > 0 && !showWeddingList && <button className="button button-secondary" type="button" onClick={openWeddingList}>My weddings</button>}
           <ThemeToggle />
-          <details className="help-popover">
-            <summary aria-label="Help">?</summary>
-            <div className="tooltip-content">Only selected wedding facts, photo descriptions, your favorite moment, and optional inspiration are sent for drafting. Prior approved work is reduced to style cues. Leave names and contact details out of free text, and review before using any text.</div>
-          </details>
         </div>
       </header>
 
-      <section className="intro">
-        <p className="eyebrow">A quiet studio for your next story</p>
-        <h1>From wedding day to <em>venue story.</em></h1>
-        <p className="intro-copy">Start with the details you already have. Shape a thoughtful draft in your voice, then carry it into ShowIt when you are ready.</p>
-        <div className="flourish" aria-hidden="true">
-          <span className="flourish-mark">
-            <Image className="brand-icon-light" src="/icons/gathered-stories-light.png" alt="" width={768} height={768} unoptimized />
-            <Image className="brand-icon-dark" src="/icons/gathered-stories-dark.png" alt="" width={768} height={768} unoptimized />
-          </span>
-        </div>
-      </section>
+      {authChecked && !authenticated && <SignInCard />}
 
-      {!showWeddingList && <nav className="step-nav" aria-label="Wedding story steps" style={cssVar("--step-index", step)}>
+      {authenticated && !showWeddingList && !showVendorLibrary && <nav className="step-nav" aria-label="Wedding story steps" style={cssVar("--step-index", step)}>
         {steps.map((label, index) => (
           <button className={`step-tab ${step === index ? "active" : ""} ${step > index ? "complete" : ""}`} type="button" key={label} onClick={() => {
             if (index === step) return;
@@ -755,7 +740,7 @@ export default function HomePage() {
         ))}
       </nav>}
 
-      <div className="work-area" ref={workAreaRef}>
+      {authenticated && <div className="work-area" ref={workAreaRef}>
         {showVendorLibrary && authenticated ? (
           <VendorLibrary
             vendors={vendorLibrary}
@@ -783,8 +768,8 @@ export default function HomePage() {
             <WeddingForm wedding={wedding} onChange={changeWedding} />
             {vendorPicker}
             <div className="step-actions">
-              <span className="microcopy">{autoSaveStatus || "Your information stays private to your account when saved."}</span>
-              <button className="button button-primary" type="button" onClick={continueToPhotos}>Continue to photos <span className="btn-arrow" aria-hidden="true">→</span></button>
+              <span className="microcopy">{autoSaveStatus}</span>
+              <button className="button button-primary" type="button" onClick={continueToPhotos}>Next: photos <span className="btn-arrow" aria-hidden="true">→</span></button>
             </div>
           </>
         )}
@@ -794,33 +779,29 @@ export default function HomePage() {
             <PhotoPicker photos={photos} onChange={changePhotos} />
             <section className="panel moment-panel">
               <label className="field">
-                <span className="eyebrow">Only you can write this</span>
-                <span className="moment-title">What was your favorite moment from the day?</span>
-                <textarea rows={3} maxLength={1000} value={favoriteMoment} onChange={(event) => changeFavoriteMoment(event.target.value)} placeholder="One line is enough. A small moment, exactly as you remember it. Please leave out names and contact details." />
-              </label>
-            </section>
-            <section className="panel moment-panel">
-              <label className="field">
-                <span className="field-label">Optional inspiration</span>
-                <span className="muted-copy">A detail, phrase, or creative direction. Leave out names and contact details.</span>
-                <textarea rows={3} maxLength={500} value={optionalInspiration} onChange={(event) => changeInspiration(event.target.value)} />
+                <span className="moment-title">What was your favorite moment of the day?</span>
+                <span className="muted-copy">One or two sentences, the way you&rsquo;d tell a friend. The post is built around it.</span>
+                <textarea rows={3} maxLength={1000} value={favoriteMoment} onChange={(event) => changeFavoriteMoment(event.target.value)} placeholder="e.g. The bride joked she usually wears overalls, then walked out in black lace." />
               </label>
               <label className="field voice-choice">
-                <span className="field-label">Writing voice</span>
+                <span className="field-label">Tone of the post</span>
                 <select value={voice} onChange={(event) => changeVoice(event.target.value as "delicate" | "active")}>
-                  <option value="delicate">Delicate / romantic</option>
-                  <option value="active">Fun / active</option>
+                  <option value="active">Fun &amp; playful</option>
+                  <option value="delicate">Soft &amp; romantic</option>
                 </select>
               </label>
-              <label className="check-row">
-                <input type="checkbox" checked={useVoiceExamples} onChange={(event) => changeUseVoiceExamples(event.target.checked)} />
-                <span>Use privacy-safe style cues calculated from my previously approved drafts.</span>
-              </label>
+              <details className="import-details">
+                <summary>Anything else to include? (optional)</summary>
+                <label className="field">
+                  <span className="muted-copy">A detail, phrase or idea you want in the post.</span>
+                  <textarea rows={3} maxLength={500} value={optionalInspiration} onChange={(event) => changeInspiration(event.target.value)} />
+                </label>
+              </details>
             </section>
             <div className="step-actions">
               <span className="microcopy">{autoSaveStatus}</span>
               <button className="button button-secondary" type="button" onClick={() => goToStep(0)}><span className="btn-arrow" aria-hidden="true">←</span> Back</button>
-              <button className="button button-primary" type="button" onClick={writeDraft} disabled={busy} aria-busy={busy}>{busy ? "Writing your draft…" : "Write draft"} <span className="btn-arrow" aria-hidden="true">→</span></button>
+              <button className="button button-primary" type="button" onClick={writeDraft} disabled={busy} aria-busy={busy}>{busy ? "Writing your post… (about a minute)" : "Write my blog post"} <span className="btn-arrow" aria-hidden="true">→</span></button>
             </div>
           </>
         )}
@@ -830,8 +811,7 @@ export default function HomePage() {
             <DraftReview draft={asContent(draft)} approved={draft.status === "approved"} busy={busy} voice={voice} similarityWarning={draft.similarityWarning ?? false} saveStatus={autoSaveStatus} onChange={updateDraft} onVoiceChange={changeVoice} onRegenerate={regenerateDraft} onApprove={approveDraft} vendors={weddingVendors} onEditVendors={() => setReviewVendorsOpen((open) => !open)} />
             {reviewVendorsOpen && vendorPicker}
             <div className="step-actions">
-              <button className="button button-secondary" type="button" onClick={() => goToStep(1)}><span className="btn-arrow" aria-hidden="true">←</span> Back to photo notes</button>
-              <span className="microcopy">Nothing is published from this app.</span>
+              <button className="button button-secondary" type="button" onClick={() => goToStep(1)}><span className="btn-arrow" aria-hidden="true">←</span> Back to photos</button>
             </div>
           </>
         )}
@@ -853,8 +833,7 @@ export default function HomePage() {
               {reviewVendorsOpen && <div className="share-kit-picker">{vendorPicker}</div>}
             </ShowItPack>
             <div className="step-actions">
-              <button className="button button-secondary" type="button" onClick={() => goToStep(2)}><span className="btn-arrow" aria-hidden="true">←</span> Back to approved draft</button>
-              <span className="microcopy">Copy and paste each field into ShowIt when ready.</span>
+              <button className="button button-secondary" type="button" onClick={() => goToStep(2)}><span className="btn-arrow" aria-hidden="true">←</span> Back to the post</button>
             </div>
           </>
         )}
@@ -865,7 +844,7 @@ export default function HomePage() {
           {error && <p className="alert-error" role="alert">{error}</p>}
           {notice && <p className="alert-success" role="status">{notice}</p>}
         </div>}
-      </div>
+      </div>}
 
       <footer className="footer-note">
         <span className="footer-sign">
@@ -875,7 +854,6 @@ export default function HomePage() {
           </span>
           made for stories worth remembering.
         </span>
-        <span>Draft-only · no auto-publishing · no raw photo uploads</span>
       </footer>
     </main>
   );

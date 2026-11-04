@@ -31,28 +31,29 @@ export function PhotoPicker({ photos, onChange }: Props) {
     onChange(photos.filter((photo) => photo.id !== id));
   }
 
+  const filled = photos.filter((photo) => photo.description.trim()).length;
+
   return (
     <section className="panel">
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">Photo notes</p>
-          <h2>Choose 10–20 moments to describe</h2>
+          <h2>Describe your favorite photos</h2>
         </div>
-        <span className="count-badge" key={photos.length}>{photos.length} / 20</span>
+        <span className="count-badge" key={photos.length}>{filled} of {photos.length} done</span>
       </div>
-      <p className="muted-copy">No image upload in v1. Add a short caption or description for each photo; these notes inform generated ShowIt photo captions. Leave names and contact details out.</p>
+      <p className="muted-copy">Pick at least 10 favorite photos from this wedding. For each one, write a few words about what&rsquo;s in it. Short is fine.</p>
       <div className="photo-fields">
         {photos.map((photo, index) => (
           <div className="photo-field" key={photo.id} style={cssVar("--i", index < 10 ? index : 0)}>
             <label className="field" htmlFor={`photo-${photo.id}`}>
               <span className="field-label">Photo {index + 1}</span>
-              <textarea id={`photo-${photo.id}`} rows={2} placeholder="What is visible in this frame?" value={photo.description} onChange={(event) => updateDescription(photo.id, event.target.value)} />
+              <textarea id={`photo-${photo.id}`} rows={2} placeholder={index === 0 ? "e.g. Bride laughing with her bridesmaids on the porch" : "What's in this photo?"} value={photo.description} onChange={(event) => updateDescription(photo.id, event.target.value)} />
             </label>
-            {photos.length > 10 && <button className="icon-button" type="button" aria-label={`Remove photo description ${index + 1}`} onClick={() => removeDescription(photo.id)}>×</button>}
+            {photos.length > 10 && <button className="icon-button" type="button" aria-label={`Remove photo ${index + 1}`} onClick={() => removeDescription(photo.id)}>×</button>}
           </div>
         ))}
       </div>
-      <button className="button button-secondary" type="button" onClick={addDescription} disabled={photos.length >= 20}>Add another description</button>
+      <button className="button button-secondary" type="button" onClick={addDescription} disabled={photos.length >= 20}>Add another photo</button>
     </section>
   );
 }

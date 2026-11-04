@@ -72,25 +72,24 @@ export function VendorShareKit({ vendors, venue, weddingDate, link, profile, onS
   }
 
   return (
-    <section className="share-kit" aria-labelledby="share-kit-title">
+    <section className="panel share-kit" aria-labelledby="share-kit-title">
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">Share with vendors</p>
-          <h2 id="share-kit-title">Let them know they&apos;re featured</h2>
+          <h2 id="share-kit-title">Tell your vendors</h2>
         </div>
         {vendors.length > 0 && <span className="count-badge">{sentCount} of {vendors.length} sent</span>}
       </div>
 
       {vendors.length === 0 ? (
         <div className="inline-actions">
-          <p className="muted-copy">Add the vendors who worked this wedding to get a ready-to-send message for each.</p>
+          <p className="muted-copy">Add the vendors who worked this wedding and you&rsquo;ll get a ready-to-send &ldquo;you&rsquo;re featured&rdquo; message for each.</p>
           <button className="button button-secondary" type="button" onClick={onEditVendors}>Add vendors</button>
         </div>
       ) : (
         <>
           <div className="share-kit-setup">
             <label className="field" htmlFor="post-url">
-              <span className="field-label">Live post link</span>
+              <span className="field-label">Link to the post</span>
               <span className="field-source">
                 {resolved.url && !link.postUrl ? "Using your WordPress post. Paste the live link to use a different one." : "Paste the link once the post is live."}
               </span>
