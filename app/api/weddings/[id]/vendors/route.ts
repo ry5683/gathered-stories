@@ -51,36 +51,20 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return NextResponse.json({ error: "Sign in to save vendors." }, { status: 401 });
 
-    // The wedding has to be the signed-in owner's (row-level security hides anyone else's).
-    const { data: wedding, error: weddingError } = await supabase.from("weddings").select("id").eq("id", id).maybeSingle();
-    if (weddingError || !wedding) return NextResponse.json({ error: "Wedding not found." }, { status: 404 });
-
-    const keep = list.map((item) => item.vendorId);
-    let removeQuery = supabase.from("wedding_vendors").delete().eq("wedding_id", id);
-    if (keep.length > 0) removeQuery = removeQuery.not("vendor_id", "in", `(${keep.join(",")})`);
-    // Clear collaborator flags first, so swapping one collaborator for another never trips the limit of 5.
-    const [{ error: removeError }, { error: clearError }] = await Promise.all([
-      removeQuery,
-      supabase.from("wedding_vendors").update({ is_collaborator: false }).eq("wedding_id", id),
-    ]);
-    if (removeError || clearError) throw new Error(removeError?.code ?? clearError?.code ?? "database_error");
-
-    if (list.length > 0) {
-      // Upsert leaves shared_at alone, so a vendor already sent their message stays marked as sent.
-      const { error: upsertError } = await supabase.from("wedding_vendors").upsert(
-        list.map((item, index) => ({
-          wedding_id: id,
-          vendor_id: item.vendorId,
-          user_id: user.id,
-          sort_order: index,
-          is_collaborator: item.isCollaborator,
-        })),
-        { onConflict: "wedding_id,vendor_id" },
-      );
-      if (upsertError) {
-        console.error("Wedding vendor save failed:", upsertError.code ?? "database_error");
-        return NextResponse.json({ error: "The vendor list could not be saved. Check that each vendor is still in your library." }, { status: 400 });
+    // One database transaction (migration 20261103): removals, collaborator flags and the new order
+    // either all save or none do. It runs as the signed-in user, so row-level security still applies:
+    // another person's wedding is "not found", and another person's vendor is refused.
+    const { error: saveError } = await supabase.rpc("replace_wedding_vendors", {
+      p_wedding_id: id,
+      p_vendors: list,
+    });
+    if (saveError) {
+      console.error("Wedding vendor save failed:", saveError.code ?? "database_error");
+      if (saveError.code === "P0002") return NextResponse.json({ error: "Wedding not found." }, { status: 404 });
+      if (saveError.code === "42883" || saveError.code === "PGRST202") {
+        return NextResponse.json({ error: "The vendor update hasn't been applied to the database yet. Run migration 20261103_vendor_save_fixes.sql." }, { status: 500 });
       }
+      return NextResponse.json({ error: "The vendor list could not be saved, and nothing was changed. Check that each vendor is still in your library." }, { status: 400 });
     }
     return NextResponse.json({ vendors: await loadWeddingVendors(supabase, id) });
   } catch (error) {

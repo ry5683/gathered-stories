@@ -13,12 +13,17 @@ type Props = {
   library: LibraryVendor[];
   selected: WeddingVendor[];
   saveStatus: string;
+  // The picker saves the whole set, so it stays locked until the wedding's saved vendors have loaded.
+  loadState: "ready" | "loading" | "failed";
+  onRetryLoad: () => void;
   onChange: (next: WeddingVendor[]) => void;
-  onCreateVendor: (draft: VendorDraft) => Promise<Vendor>;
+  // Appends to the parent's latest selection, so a slow save can't overwrite changes made meanwhile.
+  onAddVendor: (vendor: Vendor) => void;
+  onCreateVendorAndAdd: (draft: VendorDraft) => Promise<{ vendor: Vendor; added: boolean }>;
   onOpenLibrary: () => void;
 };
 
-export function VendorPicker({ authenticated, library, selected, saveStatus, onChange, onCreateVendor, onOpenLibrary }: Props) {
+export function VendorPicker({ authenticated, library, selected, saveStatus, loadState, onRetryLoad, onChange, onAddVendor, onCreateVendorAndAdd, onOpenLibrary }: Props) {
   const [pickId, setPickId] = useState("");
   const [newVendor, setNewVendor] = useState<VendorDraft>(emptyVendorDraft());
   const [adding, setAdding] = useState(false);
@@ -34,6 +39,23 @@ export function VendorPicker({ authenticated, library, selected, saveStatus, onC
     );
   }
 
+  if (loadState !== "ready") {
+    return (
+      <section className="panel vendor-panel" aria-labelledby="vendor-picker-title">
+        <p className="eyebrow">Vendor credits</p>
+        <h2 id="vendor-picker-title">Who worked this wedding?</h2>
+        {loadState === "loading" ? (
+          <p className="muted-copy" role="status">Loading this wedding&rsquo;s vendors…</p>
+        ) : (
+          <div className="inline-actions">
+            <span className="status-message" role="alert">This wedding&rsquo;s vendors couldn&rsquo;t be loaded, so editing is paused to protect them.</span>
+            <button className="button button-secondary" type="button" onClick={onRetryLoad}>Try again</button>
+          </div>
+        )}
+      </section>
+    );
+  }
+
   const selectedIds = new Set(selected.map((item) => item.vendor.id));
   const available = library.filter((vendor) => !selectedIds.has(vendor.id));
   const collaboratorCount = selected.filter((item) => item.isCollaborator).length;
@@ -42,14 +64,10 @@ export function VendorPicker({ authenticated, library, selected, saveStatus, onC
     return list.map((item, index) => ({ ...item, sortOrder: index }));
   }
 
-  function add(vendor: Vendor) {
-    onChange(renumber([...selected, { vendor, sortOrder: selected.length, isCollaborator: false, sharedAt: null }]));
-  }
-
   function addPicked() {
     const vendor = library.find((candidate) => candidate.id === pickId);
     if (!vendor) return;
-    add(vendor);
+    onAddVendor(vendor);
     setPickId("");
     setMessage(`${vendor.businessName} added.`);
   }
@@ -62,10 +80,9 @@ export function VendorPicker({ authenticated, library, selected, saveStatus, onC
     }
     setAdding(true);
     try {
-      const vendor = await onCreateVendor(newVendor);
-      add(vendor);
+      const { vendor, added } = await onCreateVendorAndAdd(newVendor);
       setNewVendor(emptyVendorDraft(newVendor.role));
-      setMessage(`${vendor.businessName} saved to your vendors and added.`);
+      setMessage(added ? `${vendor.businessName} saved to your vendors and added.` : `${vendor.businessName} saved to your vendors.`);
     } catch (caught) {
       setMessage(caught instanceof Error ? caught.message : "The vendor could not be saved.");
     } finally {
@@ -120,7 +137,7 @@ export function VendorPicker({ authenticated, library, selected, saveStatus, onC
                 <input
                   type="checkbox"
                   checked={item.isCollaborator}
-                  disabled={!item.vendor.instagramHandle || (!item.isCollaborator && collaboratorCount >= MAX_COLLABORATORS)}
+                  disabled={!item.isCollaborator && (!item.vendor.instagramHandle || collaboratorCount >= MAX_COLLABORATORS)}
                   onChange={(event) => toggleCollaborator(index, event.target.checked)}
                 />
                 <span>Collaborator</span>

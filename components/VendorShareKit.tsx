@@ -7,7 +7,9 @@
 import { useState } from "react";
 import { buildShareMessage, instagramProfileUrl, isHttpsUrl, mailtoLink, orderVendors, roleLabel, type WeddingVendor } from "@/lib/credits";
 
-export type PostLinkInfo = { wordpressUrl: string | null; isPublished: boolean; postUrl: string | null };
+import { resolvePostLink, type PostLinkInfo } from "@/lib/post-links";
+
+export type { PostLinkInfo };
 
 type Props = {
   vendors: WeddingVendor[];
@@ -20,14 +22,6 @@ type Props = {
   onEditProfile: () => void;
   onEditVendors: () => void;
 };
-
-// The link vendors get: a pasted live link wins, then the WordPress post (its ?p= link redirects once published).
-export function resolvePostLink(link: PostLinkInfo): { url: string | null; warning: string } {
-  if (link.postUrl) return { url: link.postUrl, warning: "" };
-  if (link.wordpressUrl && link.isPublished) return { url: link.wordpressUrl, warning: "" };
-  if (link.wordpressUrl) return { url: link.wordpressUrl, warning: "This is the WordPress draft link. It only works for vendors once the post is published." };
-  return { url: null, warning: "" };
-}
 
 export function VendorShareKit({ vendors, venue, weddingDate, link, profile, onSavePostUrl, onMarkSent, onEditProfile, onEditVendors }: Props) {
   const [postUrlDraft, setPostUrlDraft] = useState(link.postUrl ?? "");
